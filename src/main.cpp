@@ -104,8 +104,8 @@ Task<int> stressTest(int iterations){
 		//co_await branchB;
 		//co_await branchF;
 		
-		auto b1 = threadpool.branch(permutation());
-		auto b2 = threadpool.branch(permutation());
+		auto b1 = threadpool.chain(multiply(1,i));
+		auto b2 = threadpool.chain(multiply(1,i));
 		//auto b3 = threadpool.branch(permutation());
 		//auto b4 = threadpool.branch(permutation());
 		//auto b5 = threadpool.branch(permutation());

@@ -1,7 +1,7 @@
-CLANG := clang++
+CLANG := clang++ 
 GCC := g++ -fcoroutines
 
-CXX := $(GCC) -std=c++20
+CXX := $(GCC) -std=c++20 #-fsanitize=thread
 
 CXXFLAGS := -Wall -g -O3
 
@@ -27,7 +27,7 @@ OBJS := $(patsubst $(SRCPATH)/%.cpp, $(OBJPATH)/%.o, $(SRCS))
 DEPENDS := $(patsubst $(SRCPATH)/%.cpp, $(MAKEDEPSPATH)/%.d, $(SRCS))
 
 
-.PHONY: all run clean
+.PHONY: all run clean clang
 
 all: $(EXE)
 	
@@ -59,3 +59,4 @@ endif
 
 run:
 	./$(EXE)
+	
