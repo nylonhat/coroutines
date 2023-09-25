@@ -11,7 +11,7 @@
 #include "threadpool_branched_task.h"
 #include "concurrentqueue.h"
 #include "backoff.h"
-
+#include "scheduler.h"
 
 struct Threadpool {
 	mpmc_bounded_queue<std::function<void()>> queue{128};
@@ -45,6 +45,15 @@ struct Threadpool {
 
 	~Threadpool(){
 		running.store(false);
+	}
+
+	void schedule(std::function<void()> task){
+		
+		while(!queue.enqueue(task)){
+			;
+		}
+		
+		
 	}
 
 	bool enqueue(std::function<void()> task){
@@ -86,19 +95,19 @@ struct Threadpool {
 
 	
 	//Branching Implementation	
-	template<template<typename>typename AWAITABLE, typename T>
-	BranchedTask<T> branch_by_value(AWAITABLE<T> awaitable){
+	template<Scheduler S, template<typename>typename AWAITABLE, typename T>
+	BranchedTask<T, S> branch_by_value(AWAITABLE<T> awaitable){
 		co_return co_await awaitable;
 	};
 
-	template<template<typename>typename AWAITABLE, typename T>
-	BranchedTask<T> branch_by_reference(AWAITABLE<T>& awaitable){
+	template<Scheduler S, template<typename>typename AWAITABLE, typename T>
+	BranchedTask<T, S> branch_by_reference(AWAITABLE<T>& awaitable){
 		co_return co_await awaitable;
 	};
 
 	template<template<typename>typename AWAITABLE, typename T>
 	auto branch(AWAITABLE<T>&& awaitable){
-		return branch_by_value<AWAITABLE, T>(std::forward<AWAITABLE<T>>(awaitable));
+		return branch_by_value<Threadpool ,AWAITABLE, T>(std::forward<AWAITABLE<T>>(awaitable));
 	};
 
 	//template<template<typename>typename AWAITABLE, typename T>

@@ -1,8 +1,8 @@
-CXX := g++ -std=c++20 -O3 -fcoroutines
+CXX := g++-13 -std=c++20 -O3 -fcoroutines
 CXXFLAGS := -Wall -g  
 RM := del
 
-CL := clang++-16 -std=c++20 -O3 
+CL := clang++-16 -std=c++20 -O3
 
 GLSLC := glslc.exe
 

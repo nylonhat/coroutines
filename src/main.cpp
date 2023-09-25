@@ -7,8 +7,15 @@
 #include "blocking_task.h"
 #include "task.h"
 #include "threadpool.h"
+#include <concepts>
+#include "scheduler.h"
 
 Threadpool threadpool{8};
+
+template<typename B>
+concept Branchable = requires(B b){
+	b;
+};
 
 int multiply_func(int a, int b){
 	return a*b;
@@ -56,14 +63,14 @@ Task<int> C(){
 	co_return 3;
 }
 
-Task<int> D(BranchedTask<int>& b){
+Task<int> D(auto& b){
 	auto a = threadpool.branch(A());
 	//auto a = A();
 	
 	co_return co_await a + co_await b;
 }
 
-Task<int> E(BranchedTask<int>& b){
+Task<int> E(BranchedTask<int, Threadpool>& b){
 	auto c = threadpool.branch(C());
 	//auto c = C();
 	co_return co_await b + co_await c;

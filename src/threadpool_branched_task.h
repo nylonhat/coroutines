@@ -3,18 +3,19 @@
 
 #include <atomic>
 #include "coro_flag.h"
+#include "scheduler.h"
 
-struct Threadpool;
 
-template<typename T>
+
+template<typename T, Scheduler S>
 struct [[nodiscard]] BranchedTask {
 	struct promise_type {
 		T value;
-		Threadpool& threadpool;
+		S& threadpool;
 		CoroFlag<T> flag;
 
 		template<template<typename>typename AWAITABLE>
-		promise_type(Threadpool& tp, AWAITABLE<T> &awaitable)
+		promise_type(S& tp, AWAITABLE<T> &awaitable)
 			:threadpool{tp}, flag{[this](){return value;}}
 		{
 			
@@ -31,7 +32,7 @@ struct [[nodiscard]] BranchedTask {
 
 			void await_suspend (std::coroutine_handle<> handle) noexcept {
 
-				promise.threadpool.enqueue([handle](){
+				promise.threadpool.schedule([handle](){
 					handle.resume();
 				});
 			}
@@ -52,7 +53,7 @@ struct [[nodiscard]] BranchedTask {
 			void await_suspend (std::coroutine_handle<> handle) noexcept {
 				promise.flag.signal_and_notify([this](std::coroutine_handle<> resuming_handle){
 						
-					promise.threadpool.enqueue([resuming_handle](){
+					promise.threadpool.schedule([resuming_handle](){
 						resuming_handle.resume();
 					});
 
