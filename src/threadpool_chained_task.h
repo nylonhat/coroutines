@@ -1,18 +1,18 @@
 #ifndef THREADPOOL_CHAINED_TASK_H
 #define THREADPOOL_CHAINED_TASK_H
 
-struct Threadpool;
+#include "scheduler.h"
 
-template<typename T>
+template<typename T, Scheduler S>
 struct ChainedTask {
 	struct promise_type {
 
 		T value;
 		std::variant<std::monostate, std::coroutine_handle<>> waiting_handle;
-		Threadpool& threadpool;
+		S& threadpool;
 
 		template<template<typename>typename AWAITABLE>
-		promise_type(Threadpool& tp, AWAITABLE<T>& awaitable)
+		promise_type(S& tp, AWAITABLE<T>& awaitable)
 			:threadpool{tp}{}
 
 		ChainedTask get_return_object() { 
@@ -111,6 +111,17 @@ struct ChainedTask {
 
 };
 
+
+//Chaining Implementation
+template<Scheduler S, template<typename>typename AWAITABLE, typename T>
+ChainedTask<T, S> chain_by_value_on(S& scheduler, AWAITABLE<T> awaitable){
+	co_return co_await awaitable;
+};
+
+template<Scheduler S, template<typename>typename AWAITABLE, typename T>
+ChainedTask<T, S> chain_by_reference_on(S& scheduler, AWAITABLE<T>& awaitable){
+	co_return co_await awaitable;
+};
 
 
 

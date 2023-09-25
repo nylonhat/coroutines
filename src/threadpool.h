@@ -48,21 +48,9 @@ struct Threadpool {
 	}
 
 	void schedule(std::function<void()> task){
-		
 		while(!queue.enqueue(task)){
 			;
 		}
-		
-		
-	}
-
-	bool enqueue(std::function<void()> task){
-		
-		while(!queue.enqueue(task)){
-			;
-		}
-		
-		return true;
 	}
 
 	bool dequeue(std::function<void()>& task){
@@ -72,49 +60,22 @@ struct Threadpool {
 
 	//Chaining Implementation
 	template<template<typename>typename AWAITABLE, typename T>
-	ChainedTask<T> chain_by_value(AWAITABLE<T> awaitable){
-		co_return co_await awaitable;
-	};
-
-	template<template<typename>typename AWAITABLE, typename T>
-	ChainedTask<T> chain_by_reference(AWAITABLE<T>& awaitable){
-		co_return co_await awaitable;
-	};
-
-	template<template<typename>typename AWAITABLE, typename T>
 	auto chain(AWAITABLE<T>&& awaitable){
-		return chain_by_value<AWAITABLE, T>(std::forward<AWAITABLE<T>>(awaitable));
+		return chain_by_value_on<Threadpool, AWAITABLE, T>(*this, std::forward<AWAITABLE<T>>(awaitable));
 	};
 
 	template<template<typename>typename AWAITABLE, typename T>
 	auto chain(AWAITABLE<T>& awaitable){
-		return chain_by_reference<AWAITABLE, int>(awaitable);
+		return chain_by_reference_on<Threadpool, AWAITABLE, T>(*this, awaitable);
 	};
-
 
 
 	
 	//Branching Implementation	
-	template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-	BranchedTask<T, S> branch_by_value(AWAITABLE<T> awaitable){
-		co_return co_await awaitable;
-	};
-
-	template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-	BranchedTask<T, S> branch_by_reference(AWAITABLE<T>& awaitable){
-		co_return co_await awaitable;
-	};
-
 	template<template<typename>typename AWAITABLE, typename T>
 	auto branch(AWAITABLE<T>&& awaitable){
-		return branch_by_value<Threadpool ,AWAITABLE, T>(std::forward<AWAITABLE<T>>(awaitable));
+		return branch_by_value_on<Threadpool, AWAITABLE, T>(*this, std::forward<AWAITABLE<T>>(awaitable));
 	};
-
-	//template<template<typename>typename AWAITABLE, typename T>
-	//auto branch(AWAITABLE<T>& awaitable){
-	//	return branch_by_reference<AWAITABLE, T>(awaitable);
-	//};
-
 
 };
 

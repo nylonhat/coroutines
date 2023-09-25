@@ -1,10 +1,9 @@
-CXX := g++-13 -std=c++20 -O3 -fcoroutines
-CXXFLAGS := -Wall -g  
-RM := del
+CLANG := clang++-16
+GCC := g++-13 -fcoroutines
 
-CL := clang++-16 -std=c++20 -O3
+CXX := $(GCC) -std=c++20
 
-GLSLC := glslc.exe
+CXXFLAGS := -Wall -g -O3
 
 SRCPATH := ./src
 BINPATH := ./bin
@@ -27,18 +26,13 @@ DEPENDS := $(patsubst $(SRCPATH)/%.cpp, $(MAKEDEPSPATH)/%.d, $(SRCS))
 all: $(EXE)
 	
 $(EXE): $(OBJS)
-	$(CL) $(CXXFLAGS) $^ -o $@ -lpthread -L$(LIBPATHS) $(LIBFLAGS)
+	$(CXX) $(CXXFLAGS) $^ -o $@ -lpthread -L$(LIBPATHS) $(LIBFLAGS)
 
-shaders: $(SHADEROBJS)
-	
 -include $(DEPENDS)
 
 $(OBJPATH)/%.o: $(SRCPATH)/%.cpp Makefile | $(OBJPATH) $(MAKEDEPSPATH)
-	$(CL) $(CXXFLAGS) -MMD -MP -MF $(MAKEDEPSPATH)/$*.d -I$(INCLUDEPATH) -c $< -o $@ 
+	$(CXX) $(CXXFLAGS) -MMD -MP -MF $(MAKEDEPSPATH)/$*.d -I$(INCLUDEPATH) -c $< -o $@ 
 
-$(SHADERPATH)/%.spv: $(SHADERPATH)/%
-	$(GLSLC) $< -o $@
-	
 $(OBJPATH) $(MAKEDEPSPATH):
 ifdef OS
 	powershell.exe [void](New-Item -ItemType Directory -Path ./ -Name $@)

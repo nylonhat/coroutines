@@ -1,11 +1,8 @@
 #ifndef THREADPOOL_BRANCHED_TASK_H
 #define THREADPOOL_BRANCHED_TASK_H
 
-#include <atomic>
 #include "coro_flag.h"
 #include "scheduler.h"
-
-
 
 template<typename T, Scheduler S>
 struct [[nodiscard]] BranchedTask {
@@ -122,5 +119,12 @@ struct [[nodiscard]] BranchedTask {
 	}
 
 };
+
+//Branching Implementation
+template<Scheduler S, template<typename>typename AWAITABLE, typename T>
+BranchedTask<T, S> branch_by_value_on(S& scheduler, AWAITABLE<T> awaitable){
+	co_return co_await awaitable;
+};
+
 
 #endif
