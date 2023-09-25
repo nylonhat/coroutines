@@ -13,26 +13,18 @@ LIBPATHS := ./dep/lib
 LIBFLAGS := 
 INCLUDEPATH := ./dep/include
 MAKEDEPSPATH := ./etc/make-deps
-SHADERPATH := ./shaders
 
 EXE := program.exe
 
 SRCS := $(wildcard $(SRCPATH)/*.cpp)
 OBJS := $(patsubst $(SRCPATH)/%.cpp, $(OBJPATH)/%.o, $(SRCS))
 
-VERTSRCS := $(wildcard $(SHADERPATH)/*.vert)
-FRAGSRCS := $(wildcard $(SHADERPATH)/*.frag)
-
-SHADERSRCS := $(VERTSRCS) $(FRAGSRCS)
-SHADEROBJS := $(patsubst $(SHADERPATH)/%, $(SHADERPATH)/%.spv, $(SHADERSRCS))
-
 DEPENDS := $(patsubst $(SRCPATH)/%.cpp, $(MAKEDEPSPATH)/%.d, $(SRCS))
 
 
-.PHONY: all run clean shaders
+.PHONY: all run clean
 
-
-all: $(EXE) shaders
+all: $(EXE)
 	
 $(EXE): $(OBJS)
 	$(CL) $(CXXFLAGS) $^ -o $@ -lpthread -L$(LIBPATHS) $(LIBFLAGS)
@@ -58,7 +50,12 @@ clean:
 ifdef OS
 	powershell.exe if (Test-Path $(OBJPATH)) {Remove-Item $(OBJPATH) -Recurse}
 	powershell.exe if (Test-Path $(EXE)) {Remove-Item $(EXE)}
+	powershell.exe if (Test-Path $(MAKEDEPSPATH)) {Remove-Item $(MAKEDEPSPATH) -Recurse}
 else
-	rm -r $(OBJPATH)
-	rm -r $(EXE)
+	rm -rf $(OBJPATH)
+	rm -rf $(EXE)
+	rm -rf $(MAKEDEPSPATH)
 endif
+
+run:
+	./$(EXE)
