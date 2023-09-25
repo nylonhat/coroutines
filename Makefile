@@ -1,5 +1,5 @@
-CLANG := clang++-16
-GCC := g++-13 -fcoroutines
+CLANG := clang++
+GCC := g++ -fcoroutines
 
 CXX := $(GCC) -std=c++20
 
@@ -8,8 +8,14 @@ CXXFLAGS := -Wall -g -O3
 SRCPATH := ./src
 BINPATH := ./bin
 OBJPATH := $(BINPATH)/obj
+
 LIBPATHS := ./dep/lib
-LIBFLAGS := 
+ifdef OS
+	LIBFLAGS := -lSynchronization
+else
+	LIBFLAGS :=
+endif
+
 INCLUDEPATH := ./dep/include
 MAKEDEPSPATH := ./etc/make-deps
 
