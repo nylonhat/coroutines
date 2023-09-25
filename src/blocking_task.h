@@ -2,8 +2,9 @@
 #define BLOCKING_TASK_H
 
 #include <variant>
-#include "atomic_flag.h"
 #include <atomic>
+
+#include "atomic_flag.h"
 
 template<typename T>
 struct BlockingTask {
@@ -26,8 +27,6 @@ struct BlockingTask {
 			std::coroutine_handle<> await_suspend (std::coroutine_handle<> handle) noexcept {
 				promise.flag.signal();
 
-				
-
 				return std::noop_coroutine();
 			}
 
@@ -35,8 +34,6 @@ struct BlockingTask {
 				
 		};
 
-			
-    	
 		ResultAwaiter yield_value(T yield_value){
 			value = yield_value;
 			return ResultAwaiter{*this};	
@@ -82,19 +79,20 @@ struct BlockingTask {
 	void* operator new(std::size_t size);
 	void operator delete(void* ptr, std::size_t size);
 
+
 	std::coroutine_handle<promise_type> my_handle;
 
 	T block_and_get() {
-		if (!my_handle.done()){
-			my_handle.resume();
+		if (my_handle.done()){
+			return my_handle.promise().value;		
 		}
 
-		my_handle.promise().flag.wait();
-		T result = my_handle.promise().value;
+		my_handle.resume();
 
+		my_handle.promise().flag.wait();
 		my_handle.promise().flag.reset();
 		
-		return result;
+		return my_handle.promise().value;
 	}
 
 	T operator()(){

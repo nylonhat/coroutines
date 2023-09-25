@@ -29,7 +29,6 @@ struct Task {
 		};
 
 			
-    	
 		ResultAwaiter yield_value(T yield_value){
 			value = yield_value;
 			return ResultAwaiter{*this};	

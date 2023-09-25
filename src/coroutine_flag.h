@@ -11,9 +11,7 @@ struct CoroFlag {
 	std::function<T(void)> result_callback = nullptr;
 
 	CoroFlag(std::function<T(void)> callback) 
-		: result_callback{callback}
-	{
-		
+		: result_callback{callback}	{
 	}
 
 	~CoroFlag(){
@@ -26,14 +24,16 @@ struct CoroFlag {
 	}
 
 	void signal_and_notify(std::function<void(std::coroutine_handle<>)> notify_function){
-		//signal set by exchanging the head of list with 'set' state
+		//Signal set by exchanging the head of list with 'set' state
 		auto* current_awaiter = static_cast<Awaiter*> (head_of_awaiter_list.exchange(static_cast<void*>(this)) );
-
+		
+		//Notify by walking through linked list
+		//Scheduling all awaiters in the list
 		while (current_awaiter != nullptr) {
-			// Read m_next before resuming the coroutine as resuming
-			// the coroutine will likely destroy the awaiter object.
+			//keep a temporary copy of next awaiter since it may be destroyed after awaiter is resumed
 			auto* temp_next_awaiter = current_awaiter->next_awaiter;
-
+			
+			//Provide a custom scheduling function
 			notify_function(current_awaiter->waiting_handle);
 
 			current_awaiter = temp_next_awaiter;
@@ -50,10 +50,9 @@ struct CoroFlag {
 		}
 
 		bool await_suspend(std::coroutine_handle<> awaiting_coroutine){
-			//suspend the current coroutine and wait for value
-			//register waiting handle into a linked list of waiting handles
+			//Suspend the current coroutine
 
-			// Special m_state value that indicates the event is in the 'set' state.
+			// Set state means that result is ready
 			const void* const set_state = static_cast<const void*>(&flag);
 
 			// Remember the handle of the awaiting coroutine.
@@ -63,7 +62,7 @@ struct CoroFlag {
 			void* current_head = flag.head_of_awaiter_list.load();
 
 			do {
-				// Resume immediately if already in 'set' state.
+				// Resume immediately if already in set  state.
 				if (current_head == set_state) {
 					return false;
 				} 
@@ -71,12 +70,9 @@ struct CoroFlag {
 				// Update linked list to point at current head.
 				next_awaiter = static_cast<Awaiter*>(current_head);
 
-				// Finally, try to swap the old list head, inserting this awaiter
+				// Try to swap the old list head, inserting this awaiter
 				// as the new list head.
-			} while (!flag.head_of_awaiter_list.compare_exchange_weak(
-						current_head,
-						static_cast<void*>(this)
-					));
+			} while (!flag.head_of_awaiter_list.compare_exchange_weak(current_head, static_cast<void*>(this)));
 
 			// Successfully enqueued. Remain suspended.
 			return true;
@@ -84,14 +80,13 @@ struct CoroFlag {
 
 		T await_resume(){
 			assert(flag.result_callback != nullptr);
-			T result = flag.result_callback();
-			return result;
+			return flag.result_callback();
 		}
 
 	};
 
 	Awaiter operator co_await() const noexcept{
-  		return Awaiter{ *this };
+  		return Awaiter{*this};
 	}
 
 };

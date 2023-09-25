@@ -3,25 +3,22 @@
 
 #include <atomic>
 #include <thread>
-#include <iostream>
 #include <functional>
 #include <utility>
-#include "mpmc.h"
-#include "threadpool_chained_task.h"
-#include "threadpool_branched_task.h"
-#include "concurrentqueue.h"
+
+#include "bounded_mpmc_queue.h"
+#include "chained_task.h"
+#include "branched_task.h"
 #include "backoff.h"
 #include "scheduler.h"
 
 struct Threadpool {
-	mpmc_bounded_queue<std::function<void()>> queue{128};
-	//moodycamel::ConcurrentQueue<std::function<void()>> queue{128};
+	bounded_mpmc_queue<std::function<void()>> queue{128};
 	std::atomic<bool> running{true};
 	std::vector<std::jthread> threads;
-
+	
+	//Constructor
 	Threadpool(int num_threads){
-
-
 		auto work = [this](){
 			Backoff backoff;
 			
@@ -35,7 +32,6 @@ struct Threadpool {
 				}
 			}
 
-			//std::cout << "thread exit:" << std::this_thread::get_id() << "\n";
 		};
 
 		for (int i=0; i<num_threads; i++){
@@ -43,13 +39,15 @@ struct Threadpool {
 		}
 	}
 
+	//Destructor
 	~Threadpool(){
 		running.store(false);
 	}
-
+	
+	
 	void schedule(std::function<void()> task){
-		while(!queue.enqueue(task)){
-			;
+		while(!queue.try_enqueue(task)){
+			//Keep retrying to enqueue	
 		}
 	}
 
@@ -68,7 +66,6 @@ struct Threadpool {
 	auto chain(AWAITABLE<T>& awaitable){
 		return chain_by_reference_on<Threadpool, AWAITABLE, T>(*this, awaitable);
 	};
-
 
 	
 	//Branching Implementation	

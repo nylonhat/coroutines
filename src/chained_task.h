@@ -1,19 +1,19 @@
-#ifndef THREADPOOL_CHAINED_TASK_H
-#define THREADPOOL_CHAINED_TASK_H
+#ifndef CHAINED_TASK_H
+#define CHAINED_TASK_H
 
 #include "scheduler.h"
 
 template<typename T, Scheduler S>
 struct ChainedTask {
 	struct promise_type {
-
 		T value;
 		std::variant<std::monostate, std::coroutine_handle<>> waiting_handle;
-		S& threadpool;
+		S& scheduler;
 
 		template<template<typename>typename AWAITABLE>
-		promise_type(S& tp, AWAITABLE<T>& awaitable)
-			:threadpool{tp}{}
+		promise_type(S& s, AWAITABLE<T>& awaitable)
+			:scheduler{s}{
+		}
 
 		ChainedTask get_return_object() { 
 			return {std::coroutine_handle<promise_type>::from_promise(*this)}; 
@@ -28,7 +28,7 @@ struct ChainedTask {
 
 			void await_suspend (std::coroutine_handle<> handle) noexcept {
 
-				promise.threadpool.schedule([this](){
+				promise.scheduler.schedule([this](){
 					std::get<1>(promise.waiting_handle).resume();
 				});
 
@@ -37,8 +37,6 @@ struct ChainedTask {
 			void await_resume() noexcept {}	
 		};
 
-			
-    	
 		ResultAwaiter yield_value(T yield_value){
 			value = yield_value;
 			return ResultAwaiter{*this};	
@@ -99,7 +97,7 @@ struct ChainedTask {
 	void await_suspend(std::coroutine_handle<> caller_handle) noexcept{
 		my_handle.promise().waiting_handle = caller_handle;
 	
-		my_handle.promise().threadpool.schedule([this](){
+		my_handle.promise().scheduler.schedule([this](){
 			my_handle.resume();
 		});
 		

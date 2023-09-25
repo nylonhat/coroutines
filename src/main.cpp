@@ -3,12 +3,13 @@
 #include <cassert>
 #include <algorithm>
 #include <chrono>
+#include <concepts>
+#include <vector>
+
 #include "timer.h"
 #include "blocking_task.h"
 #include "task.h"
 #include "threadpool.h"
-#include <concepts>
-#include "scheduler.h"
 
 Threadpool threadpool{8};
 
@@ -81,6 +82,42 @@ Task<int> F(){
 	co_return 44;
 }
 
+Task<int> dagTest(){
+	unsigned int result = 0;	
+
+	auto branchF = threadpool.branch(F());
+
+	auto branchB = threadpool.branch(B());
+
+	auto branchD = threadpool.branch(D(branchB));
+
+	auto branchE = threadpool.branch(E(branchB));
+	
+	result += co_await branchD;
+	result += co_await branchE;
+
+	co_await branchB;
+	co_await branchF;
+	
+	co_return result;
+}
+
+Task<int> branchesTest(int num_branches){
+	unsigned int result = 0;	
+	std::vector<BranchedTask<int, Threadpool>> branches;
+	
+	for(int i = 0; i < num_branches; i++){
+		branches.emplace_back(threadpool.branch(permutation()));
+	}
+
+	for(auto& branch: branches){
+		result += co_await branch;
+	}
+
+	co_return result;
+
+}
+
 Task<int> stressTest(int iterations){
 	
 	unsigned int result = 0;
@@ -89,58 +126,7 @@ Task<int> stressTest(int iterations){
 	timer.start();
 
 	for (int i=0; i< iterations; i++){
-
-		//auto branchF = threadpool.branch(F());
-
-		//auto branchB = threadpool.branch(B());
-
-		//auto branchD = threadpool.branch(D(branchB));
-
-		//auto branchE = threadpool.branch(E(branchB));
-		
-		//result += co_await branchD;
-		//result += co_await branchE;
-
-		//co_await branchB;
-		//co_await branchF;
-		
-		auto b1 = threadpool.chain(multiply(1,i));
-		auto b2 = threadpool.chain(multiply(1,i));
-		//auto b3 = threadpool.branch(permutation());
-		//auto b4 = threadpool.branch(permutation());
-		//auto b5 = threadpool.branch(permutation());
-		//auto b6 = threadpool.branch(permutation());
-		//auto b7 = threadpool.branch(permutation());
-		//auto b8 = threadpool.branch(permutation());
-		//auto b9 = threadpool.branch(permutation());
-		//auto b10 = threadpool.branch(permutation());
-		//auto b11 = threadpool.branch(permutation());
-		//auto b12 = threadpool.branch(permutation());
-		//auto b13 = threadpool.branch(permutation());
-		//auto b14 = threadpool.branch(permutation());
-		//auto b15 = threadpool.branch(permutation());
-		//auto b16 = threadpool.branch(permutation());
-		co_await b1;  
-		co_await b2;  
-		//co_await b3;  
-		//co_await b4;  
-		//co_await b5;  
-		//co_await b6;  
-		//co_await b7;  
-		//co_await b8;
-		//co_await b9;
-		//co_await b10;
-		//co_await b11;
-		//co_await b12;
-		//co_await b13;
-		//co_await b14;
-		//co_await b15;
-		//co_await b16;
-		
-
-		//result += co_await threadpool.branch(multiply(1,i));
-		
-		
+		result += co_await branchesTest(8); 
 		
 		//std::cout << "iternation: " << i << "\n";
 	}
@@ -152,11 +138,11 @@ Task<int> stressTest(int iterations){
 }
 
 BlockingTask<int> mainCoroutine(){
-	int iterations = 100000;
+	int iterations = 10000;
 
-	auto my_sim = stressTest(iterations);
+	auto simulation = stressTest(iterations);
 
-	auto result = co_await my_sim;
+	auto result = co_await simulation;
 
 	std::cout << "Result: " << result << "\n";
 	
