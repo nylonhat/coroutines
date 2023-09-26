@@ -26,7 +26,6 @@ struct AtomicFlag {
 		unsigned int undesired_value = 0;
 		#endif
 		
-		
 		while(boolean_flag.load() == undesired_value){
 			#ifdef _WIN32
 			WaitOnAddress(&boolean_flag, &undesired_value, sizeof(boolean_flag), INFINITE);

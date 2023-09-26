@@ -109,11 +109,14 @@ struct [[nodiscard]] BranchedTask {
 	void* operator new(std::size_t size);
 	void operator delete(void* ptr, std::size_t size);
 
-
 	std::coroutine_handle<promise_type> my_handle;
 
 	auto operator co_await() const noexcept{
   		return my_handle.promise().flag.operator co_await();
+	}
+
+	bool done(){
+		return my_handle.promise().flag.is_signalled();
 	}
 
 };
