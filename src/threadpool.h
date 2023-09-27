@@ -6,14 +6,15 @@
 #include <functional>
 #include <utility>
 
-#include "bounded_mpmc_queue.h"
+//#include "bounded_mpmc_queue.h"
 #include "chained_task.h"
 #include "branched_task.h"
 #include "backoff.h"
 #include "scheduler.h"
+#include "static_bounded_queue.h"
 
 struct Threadpool {
-	bounded_mpmc_queue<std::function<void()>> queue{128};
+	bounded_mpmc_queue<std::function<void()>, 128> queue{};
 	std::atomic<bool> running{true};
 	std::vector<std::jthread> threads;
 	
