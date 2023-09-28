@@ -5,6 +5,8 @@
 #include <chrono>
 #include <concepts>
 #include <vector>
+#include <array>
+#include <variant>
 
 #include "timer.h"
 #include "blocking_task.h"
@@ -103,8 +105,27 @@ Task<int> dagTest(){
 }
 
 Task<int> branchesTest(int num_branches){
+	unsigned int result = 0;
+	using Branch = std::variant<std::monostate, BranchedTask<int, Threadpool>>;
+	
+	std::array<Branch, 8> branches;
+	
+	for(auto& branch : branches){
+		branch.emplace<1> (threadpool.branch(permutation()));
+	}
+
+	for(auto& branch: branches){
+		result += co_await std::get<1>(branch);
+	}
+
+	co_return result;
+
+}
+
+Task<int> branchesVectorTest(int num_branches){
 	unsigned int result = 0;	
 	std::vector<BranchedTask<int, Threadpool>> branches;
+	branches.reserve(num_branches); 	
 	
 	for(int i = 0; i < num_branches; i++){
 		branches.emplace_back(threadpool.branch(permutation()));
@@ -117,6 +138,7 @@ Task<int> branchesTest(int num_branches){
 	co_return result;
 
 }
+
 
 Task<int> stressTest(int iterations){
 	

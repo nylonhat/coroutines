@@ -1,7 +1,7 @@
 CLANG := clang++ 
 GCC := g++ -fcoroutines
 
-CXX := $(GCC) -std=c++20 -fsanitize=thread
+CXX := $(CLANG) -std=c++20 #-fsanitize=thread
 
 CXXFLAGS := -Wall -g -O3
 

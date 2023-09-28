@@ -27,7 +27,7 @@ struct Threadpool {
 				std::function<void()> task;
 				if(dequeue(task)){
 					task();
-					backoff.reset();
+					backoff.easein();
 				}else{
 					backoff.backoff();
 				}
