@@ -11,7 +11,7 @@ OBJPATH := $(BINPATH)/obj
 
 LIBPATHS := ./dep/lib
 ifdef OS
-	LIBFLAGS := -lSynchronization
+	LIBFLAGS := -lSynchronization -lWs2_32
 else
 	LIBFLAGS :=
 endif

@@ -9,6 +9,7 @@
 #include <variant>
 
 #include "timer.h"
+#include "udp_socket_win32.h"
 #include "blocking_task.h"
 #include "task.h"
 #include "threadpool.h"
@@ -172,7 +173,17 @@ BlockingTask<int> mainCoroutine(){
 }
 
 int main() {
-	return mainCoroutine();
+	WSADATA wsa_data;
+	WSAStartup(MAKEWORD(2,2), &wsa_data);
+
+	networking::udp::Socket socket;
+	socket.connect(NULL, "21212", "127.0.10.5", "34343");
+
+	WSACleanup();
+
+
+	return 0;
+	//return mainCoroutine();
 }
 
 
