@@ -33,10 +33,7 @@ struct SendingTask {
 		data_buffer.len = send_buffer_size;
 		data_buffer.buf = send_buffer_ptr;
 		
-		//WSAOVERLAPPED allows us to store a void* as last member;
-		//use it to store 'this' pointer
-		overlapped.hEvent = 0;
-
+		//Custom OVERLAPPED structure allows us to store a callback as member;
 		overlapped.callback = [this](){
 			std::get<1>(waiting_handle).resume();
 		};
