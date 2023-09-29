@@ -4,12 +4,13 @@
 #include <winsock2.h>
 #include <variant>
 #include <coroutine>
+#include <iostream>
+#include "overlap_callback.h"
 
 namespace networking {
 namespace udp {
 
 
-void sendingTaskCompletionRoutine(DWORD dwError, DWORD cbTransferred, LPWSAOVERLAPPED lpOverlapped, DWORD dwFlags);
 
 struct SendingTask {
 	SOCKET socket_handle;
@@ -18,7 +19,7 @@ struct SendingTask {
 	
 	std::variant<std::monostate, std::coroutine_handle<>> waiting_handle;
 
-	WSAOVERLAPPED overlapped;
+	OverlapWithCallback overlapped{};
 
 	WSABUF data_buffer;
 
@@ -34,7 +35,11 @@ struct SendingTask {
 		
 		//WSAOVERLAPPED allows us to store a void* as last member;
 		//use it to store 'this' pointer
-		overlapped.hEvent = this;
+		overlapped.hEvent = 0;
+
+		overlapped.callback = [this](){
+			std::get<1>(waiting_handle).resume();
+		};
 		
 	}
 
@@ -46,13 +51,14 @@ struct SendingTask {
 	void await_suspend(std::coroutine_handle<> caller_handle){
 		//suspend the current coroutine
 		waiting_handle = caller_handle;
-
+		
 		//call WSASend
 		//TODO: check for error
-		WSASend(socket_handle, &data_buffer, 1, NULL, 0, 
-				&overlapped, sendingTaskCompletionRoutine);
+		int error_code = WSASend(socket_handle, &data_buffer, 1, NULL, 0, 
+				&overlapped, NULL);
 		
-			
+		if (error_code == 0){
+		}
 	}
 
 	bool await_resume(){

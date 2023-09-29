@@ -9,8 +9,6 @@
 //#include "bounded_mpmc_queue.h"
 #include "chained_task.h"
 #include "branched_task.h"
-#include "backoff.h"
-#include "scheduler.h"
 #include "static_bounded_queue.h"
 
 struct Threadpool {
@@ -19,42 +17,15 @@ struct Threadpool {
 	std::vector<std::jthread> threads;
 	
 	//Constructor
-	Threadpool(int num_threads){
-		auto work = [this](){
-			Backoff backoff;
-			
-			while(running){
-				std::function<void()> task;
-				if(dequeue(task)){
-					task();
-					backoff.easein();
-				}else{
-					backoff.backoff();
-				}
-			}
-
-		};
-
-		for (int i=0; i<num_threads; i++){
-			threads.emplace_back(work);
-		}
-	}
+	Threadpool(int num_threads);
 
 	//Destructor
-	~Threadpool(){
-		running.store(false);
-	}
+	~Threadpool();
 	
 	
-	void schedule(std::function<void()> task){
-		while(!queue.try_enqueue(task)){
-			//Keep retrying to enqueue	
-		}
-	}
+	void schedule(std::function<void()> task);
 
-	bool dequeue(std::function<void()>& task){
-		return queue.try_dequeue(task);
-	}
+	bool dequeue(std::function<void()>& task);
 
 
 	//Chaining Implementation

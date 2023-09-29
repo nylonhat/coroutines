@@ -1,6 +1,8 @@
 #ifndef BRANCHED_TASK_H
 #define BRANCHED_TASK_H
 
+#include <cassert>
+
 #include "coroutine_flag.h"
 #include "scheduler.h"
 

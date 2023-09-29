@@ -1,6 +1,9 @@
 #ifndef CHAINED_TASK_H
 #define CHAINED_TASK_H
 
+#include <coroutine>
+#include <variant>
+
 #include "scheduler.h"
 
 template<typename T, Scheduler S>
