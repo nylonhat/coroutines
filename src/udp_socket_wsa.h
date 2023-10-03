@@ -1,11 +1,11 @@
-#ifndef UDP_SOCKET_WIN32_H
-#define UDP_SOCKET_WIN32_H
+#ifndef UDP_SOCKET_WSA_H
+#define UDP_SOCKET_WSA_H
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
 
-#include "wsa_send_task.h"
-#include "wsa_recv_task.h"
+#include "sending_task_wsa.h"
+#include "recving_task_wsa.h"
 
 namespace networking {
 namespace udp{

@@ -1,5 +1,5 @@
-#ifndef WSA_SEND_TASK
-#define WSA_SEND_TASK
+#ifndef SENDING_TASK_WSA_H
+#define SENDING_TASK_WSA_H
 
 #include <winsock2.h>
 #include <variant>
