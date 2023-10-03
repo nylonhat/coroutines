@@ -1,6 +1,8 @@
 #ifndef BOUNDED_MPMC_QUEUE_H
 #define BOUNDED_MPMC_QUEUE_H
 
+//Modified from https://www.1024cores.net/home/lock-free-algorithms/queues/bounded-mpmc-queue
+
 template<typename T, size_t buffer_size>
 class bounded_mpmc_queue{
 
