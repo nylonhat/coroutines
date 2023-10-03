@@ -4,7 +4,7 @@
 namespace networking{
 namespace udp{
 
-
+template struct SendingTask<bool>;
 
 }
 }

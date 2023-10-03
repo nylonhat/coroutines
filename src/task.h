@@ -4,6 +4,26 @@
 #include <coroutine>
 #include <variant>
 
+/**
+ * A task is the most basic type of coroutine. It acts like
+ * a regular old function with a few extra features:
+ * 
+ * When another coroutine(the caller) uses the co_await keyword on this
+ * task, the caller will suspend itself and transfer execution to this
+ * task. Once this task is ready to return back a value, it will suspend
+ * itself and transfer execution back to the coroutine that originally 
+ * co_awaited it. 
+ *		Calling Coroutine -> Task Coroutine -> Calling Coroutine
+ *
+ * A task can potentially yield a value back many times during its life:
+ * by using the co_yield and co_return keywords in its body. In fact, the
+ * use of these keywords is what actually makes it a coroutine and not 
+ * just a normal function. 
+ *
+ * A task is lazy; it won't actually run until someone uses the co_await
+ * keyword on it. 
+ */
+
 template<typename T>
 struct Task {
 

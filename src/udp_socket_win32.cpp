@@ -141,9 +141,14 @@ void Socket::disconnect(){
 
 
 
-SendingTask Socket::send(char* send_buffer, size_t send_buffer_size){
+SendingTask<bool> Socket::send(const char* send_buffer, size_t send_buffer_size){
 	//TODO: check if socket is not nullptr
-	return SendingTask(socket_handle, send_buffer, send_buffer_size);
+	return SendingTask<bool>(socket_handle, send_buffer, send_buffer_size);
+}
+
+RecvingTask<bool> Socket::recv(char* recv_buffer, size_t recv_buffer_size){
+	
+	return RecvingTask<bool>(socket_handle, recv_buffer, recv_buffer_size);
 }
 
 

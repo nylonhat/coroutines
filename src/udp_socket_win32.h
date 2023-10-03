@@ -5,6 +5,7 @@
 #include <ws2tcpip.h>
 
 #include "wsa_send_task.h"
+#include "wsa_recv_task.h"
 
 namespace networking {
 namespace udp{
@@ -35,7 +36,9 @@ struct Socket{
 
 	void disconnect();
 
-	SendingTask send(char* send_buffer, size_t send_buffer_size);
+	SendingTask<bool> send(const char* send_buffer, size_t send_buffer_size);
+
+	RecvingTask<bool> recv(char* recv_buffer, size_t recv_buffer_size);
 
 
 };

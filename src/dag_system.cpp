@@ -6,23 +6,36 @@
 #include <variant>
 #include <iostream>
 
-#include "test.h"
+#include "dag_system.h"
 #include "timer.h"
-#include "threadpool.h"
 
-extern Threadpool threadpool;
+DAGSystem::DAGSystem()
+	: threadpool{8}
+{}
 
-int multiply_func(int a, int b){
+BlockingTask<int> DAGSystem::entry(){
+	int iterations = 10000;
+
+	auto simulation = stressTest(iterations);
+
+	auto result = co_await simulation;
+
+	std::cout << "Result: " << result << "\n";
+	
+	co_return 0;
+} 
+
+int DAGSystem::multiply_func(int a, int b){
 	return a*b;
 }
 
-Task<int> multiply(int a, int b){
+Task<int> DAGSystem::multiply(int a, int b){
 	//std::cout << "multiply on thread: " << std::this_thread::get_id() << "\n";
 	//std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	co_return a * b;
 }
 
-Task<int> permutation (){
+Task<int> DAGSystem::permutation (){
 	unsigned int count = 0;
 	std::array<int, 8> array {0, 1, 2, 3, 4, 5, 6, 7};
 	while(std::next_permutation(array.begin(), array.end())){
@@ -32,7 +45,7 @@ Task<int> permutation (){
 	co_return count;
 }
 
-Task<int> integerGenerator(){
+Task<int> DAGSystem::integerGenerator(){
 	for (int i = 0; true; i++){
 		co_yield i;
 	}
@@ -40,43 +53,43 @@ Task<int> integerGenerator(){
 	//return i;
 }
 
-Task<int> A(){
+Task<int> DAGSystem::A(){
 	//std::this_thread::sleep_for(std::chrono::milliseconds(300));
 	//std::cout << "A finished\n";
 	co_return 1;
 }
 
-Task<int> B(){
+Task<int> DAGSystem::B(){
 	//std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	//std::cout << "B finished\n";
 	co_return 2;
 }
 
-Task<int> C(){
+Task<int> DAGSystem::C(){
 	//std::this_thread::sleep_for(std::chrono::milliseconds(5000));
 	//std::cout << "C finished\n";
 	co_return 3;
 }
 
-Task<int> D(auto& b){
+Task<int> DAGSystem::D(auto& b){
 	auto a = threadpool.branch(A());
 	//auto a = A();
 	
 	co_return co_await a + co_await b;
 }
 
-Task<int> E(BranchedTask<int, Threadpool>& b){
+Task<int> DAGSystem::E(BranchedTask<int, Threadpool>& b){
 	auto c = threadpool.branch(C());
 	//auto c = C();
 	co_return co_await b + co_await c;
 }
 
-Task<int> F(){
+Task<int> DAGSystem::F(){
 	std::this_thread::sleep_for(std::chrono::milliseconds(4000));
 	co_return 44;
 }
 
-Task<int> dagTest(){
+Task<int> DAGSystem::dagTest(){
 	unsigned int result = 0;	
 
 	auto branchF = threadpool.branch(F());
@@ -96,7 +109,7 @@ Task<int> dagTest(){
 	co_return result;
 }
 
-Task<int> branchesTest(int num_branches){
+Task<int> DAGSystem::branchesTest(int num_branches){
 	unsigned int result = 0;
 	using Branch = std::variant<std::monostate, BranchedTask<int, Threadpool>>;
 	
@@ -114,7 +127,7 @@ Task<int> branchesTest(int num_branches){
 
 }
 
-Task<int> branchesVectorTest(int num_branches){
+Task<int> DAGSystem::branchesVectorTest(int num_branches){
 	unsigned int result = 0;	
 	std::vector<BranchedTask<int, Threadpool>> branches;
 	branches.reserve(num_branches); 	
@@ -132,7 +145,7 @@ Task<int> branchesVectorTest(int num_branches){
 }
 
 
-Task<int> stressTest(int iterations){
+Task<int> DAGSystem::stressTest(int iterations){
 	
 	unsigned int result = 0;
 	

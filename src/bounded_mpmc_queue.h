@@ -1,14 +1,13 @@
 #ifndef BOUNDED_MPMC_QUEUE_H
 #define BOUNDED_MPMC_QUEUE_H
 
-template<typename T>
+template<typename T, size_t buffer_size>
 class bounded_mpmc_queue{
 
 public:
 	//constructor
-	bounded_mpmc_queue(size_t buffer_size)
-		: buffer_(new cell_t [buffer_size])
-		, buffer_mask_(buffer_size - 1)
+	bounded_mpmc_queue()
+		: buffer_mask_(buffer_size - 1)
 	{
 
 		assert((buffer_size >= 2) && ((buffer_size & (buffer_size - 1)) == 0));
@@ -24,7 +23,6 @@ public:
 	
 	//destructor
 	~bounded_mpmc_queue(){
-		delete [] buffer_;
 	}
 
 
@@ -114,7 +112,7 @@ private:
 	
 	//Member variables
 	cacheline_pad_t pad0_;
-	cell_t* const buffer_;
+	cell_t buffer_[buffer_size];
 	size_t const buffer_mask_;
 	cacheline_pad_t  pad1_;
 	std::atomic<size_t>  enqueue_pos_;

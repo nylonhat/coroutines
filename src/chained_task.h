@@ -6,6 +6,22 @@
 
 #include "scheduler.h"
 
+/**
+ * A chained task represents a task responsible for executing another
+ * task asynchronously on a different execution context, dictated 
+ * by a scheduler.
+ *
+ * Chaining is an example of asynchronous execution: One coroutine will
+ * susupend itself first before transferring control to another coroutine.
+ * Once that coroutine has finished, it will suspend itself and return
+ * execution back to the original coroutine. At no point are these 
+ * coroutines running at the same time; hence there is no need for thread
+ * synchronisation. 
+ *
+ * Caller Coroutine -> Chained Task -> Scheduler -> Chained Task -> Task 
+ * Caller Coroutine <- Chained Task <- Scheduler <- Chained Task <- Task 
+ */
+
 template<typename T, Scheduler S>
 struct ChainedTask {
 	struct promise_type {
@@ -14,8 +30,8 @@ struct ChainedTask {
 		S& scheduler;
 
 		template<template<typename>typename AWAITABLE>
-		promise_type(S& s, AWAITABLE<T>& awaitable)
-			:scheduler{s}{
+		promise_type(S& scheduler, AWAITABLE<T>& awaitable)
+			:scheduler{scheduler}{
 		}
 
 		ChainedTask get_return_object() { 
@@ -29,11 +45,19 @@ struct ChainedTask {
 
 			bool await_ready() noexcept {return false;}
 
-			void await_suspend (std::coroutine_handle<> handle) noexcept {
+			std::coroutine_handle<> await_suspend (std::coroutine_handle<> handle) noexcept {
 
-				promise.scheduler.schedule([this](){
+				bool was_scheduled = promise.scheduler.schedule([this](){
 					std::get<1>(promise.waiting_handle).resume();
 				});
+				
+				if(was_scheduled){
+					return std::noop_coroutine();
+				}
+				
+				//If can't schedule, default to symmetric transfer
+				return std::get<1>(promise.waiting_handle).resume();
+
 
 			}
 
@@ -97,12 +121,21 @@ struct ChainedTask {
 		return my_handle.done();
 	}
 
-	void await_suspend(std::coroutine_handle<> caller_handle) noexcept{
+	std::coroutine_handle<> await_suspend(std::coroutine_handle<> caller_handle) noexcept{
 		my_handle.promise().waiting_handle = caller_handle;
-	
-		my_handle.promise().scheduler.schedule([this](){
+		
+		//Try to schedule using scheduler
+		bool was_scheduled = my_handle.promise().scheduler.schedule([this](){
 			my_handle.resume();
 		});
+
+		
+		if(was_scheduled){
+			return std::noop_coroutine();
+		}
+
+		//If can't schedule, default to running symmetric transfer
+		return my_handle;
 		
 	}
 

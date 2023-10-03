@@ -26,10 +26,8 @@ Threadpool::~Threadpool(){
 	running.store(false);
 }
 
-void Threadpool::schedule(std::function<void()> task){
-	while(!queue.try_enqueue(task)){
-		//Keep retrying to enqueue	
-	}
+bool Threadpool::schedule(std::function<void()> task){
+	return queue.try_enqueue(task);
 }
 
 

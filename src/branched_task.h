@@ -28,11 +28,19 @@ struct [[nodiscard]] BranchedTask {
 
 			bool await_ready() noexcept {return false;}
 
-			void await_suspend (std::coroutine_handle<> handle) noexcept {
-
-				promise.scheduler.schedule([handle](){
+			std::coroutine_handle<> await_suspend (std::coroutine_handle<> handle) noexcept {
+				
+				//Try to schedule branching task eagerly
+				bool was_scheduled = promise.scheduler.schedule([handle](){
 					handle.resume();
 				});
+
+				if(was_scheduled){
+					return std::noop_coroutine();
+				}
+				
+				//If we can't schedule, default to symmetric transfer
+				return handle; 
 			}
 
 			void await_resume() noexcept {}	
@@ -49,11 +57,21 @@ struct [[nodiscard]] BranchedTask {
 			bool await_ready() noexcept {return false;}
 
 			void await_suspend (std::coroutine_handle<> handle) noexcept {
+				
+				//Set signal to stop any more coroutines from registering to wait on result
 				promise.flag.signal_and_notify([this](std::coroutine_handle<> resuming_handle){
-					promise.scheduler.schedule([resuming_handle](){
+					
+					//Schedule to resume coroutines that are waiting for result
+					bool was_scheduled = promise.scheduler.schedule([resuming_handle](){
 						resuming_handle.resume();
 					});
 
+					if(was_scheduled){
+						return;
+					}
+
+					//If we can't schedule, just resume coroutines inline
+					resuming_handle.resume();
 				});
 				
 			}

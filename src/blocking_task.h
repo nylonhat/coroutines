@@ -3,8 +3,21 @@
 
 #include <variant>
 #include <atomic>
+#include <coroutine>
 
 #include "atomic_flag.h"
+
+/**
+ * A blocking task is a coroutine whose only purpose is
+ * to interact with the main() function. Since main() is 
+ * not a coroutine (its just a regular function), we can't
+ * use the co_await keywork in it. A blocking task will
+ * block the main thread until it is ready to return a value.
+ *
+ * The blocking task will essentially act as our main coroutine
+ * function. Since it is a coroutine, we can now co_await other
+ * coroutines inside its body. 
+ */
 
 template<typename T>
 struct BlockingTask {
