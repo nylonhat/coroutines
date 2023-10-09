@@ -19,10 +19,12 @@ struct alignas(64) Backoff {
 		}
 
 		std::uniform_int_distribution<unsigned int> distribution(0, (1<<backoff_count)-1 );
-
-		for (unsigned int i = 0; i < distribution(random_generator); i++){
+		unsigned int random_iterations = distribution(random_generator);
+		
+		for (unsigned int i = 0; i < random_iterations; i++){
 			_mm_pause();
 		}
+
 		backoff_count = std::min(max_backoff_count, backoff_count + 1);
 	}
 
