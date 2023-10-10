@@ -19,7 +19,7 @@ BlockingTask<int> IOSystem::entry(){
 
 	socket.connect(NULL, "21212", "10.0.0.109", "5555");
 
-	iocp.addSocket(socket.socket_handle);
+	iocp.addSocket(socket);
 	
 	std::string message = "hello string\n";
 

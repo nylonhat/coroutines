@@ -13,7 +13,7 @@ LIBPATHS := ./dep/lib
 ifdef OS
 	LIBFLAGS := -lSynchronization -lWs2_32
 else
-	LIBFLAGS :=
+	LIBFLAGS := -luring
 endif
 
 INCLUDEPATH := ./dep/include

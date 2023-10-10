@@ -1,5 +1,3 @@
-#ifdef _WIN32
-
 #ifndef UDP_SOCKET_WSA_H
 #define UDP_SOCKET_WSA_H
 
@@ -48,7 +46,5 @@ struct Socket{
 
 } //End UDP namespace
 } //End Networking namespace 
-
-#endif
 
 #endif

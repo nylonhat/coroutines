@@ -1,3 +1,5 @@
+#ifdef __linux__
+
 #include <unistd.h>
 #include <string.h>
 #include <arpa/inet.h>
@@ -159,3 +161,5 @@ RecvingTask<bool> Socket::recv(char* recv_buffer, size_t recv_buffer_size){
 
 }
 }
+
+#endif

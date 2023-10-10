@@ -1,11 +1,11 @@
-#ifdef _WIN32
-
 #ifndef IOCP_H
 #define IOCP_H
 
 #include <windows.h>
 #include <thread>
 #include <atomic>
+
+#include "udp_socket_wsa.h" 
 
 namespace networking {
 
@@ -18,13 +18,11 @@ struct IOCP {
 
 	~IOCP();
 
-	bool addSocket(SOCKET socket_handle);
+	bool addSocket(udp::Socket socket);
 
 
 };
 
 }
-
-#endif
 
 #endif
