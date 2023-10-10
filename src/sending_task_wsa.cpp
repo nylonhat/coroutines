@@ -1,3 +1,5 @@
+#ifdef _WIN32
+
 #include "sending_task_wsa.h"
 #include <iostream>
 
@@ -8,4 +10,7 @@ template struct SendingTask<bool>;
 
 }
 }
+
+
+#endif
 

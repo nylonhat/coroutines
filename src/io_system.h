@@ -1,3 +1,5 @@
+#ifdef _WIN32
+
 #ifndef IO_SYSTEM_H
 #define IO_SYSTEM_H
 
@@ -15,5 +17,7 @@ struct IOSystem {
 
 };
 
+
+#endif
 
 #endif

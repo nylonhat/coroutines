@@ -1,7 +1,10 @@
-#ifdef _WIN32
-
-#include "udp_socket_wsa.h"
+#include <unistd.h>
+#include <string.h>
+#include <arpa/inet.h>
+#include <netdb.h>
 #include <iostream>
+
+#include "udp_socket_linux.h"
 
 namespace networking {
 namespace udp {
@@ -16,7 +19,7 @@ Socket::~Socket(){
 
 addrinfo Socket::getSourceHints(){
 	addrinfo source_hints;
-	ZeroMemory(&source_hints, sizeof(source_hints));
+	memset(&source_hints, 0, sizeof(source_hints));
 	
 	source_hints.ai_family = AF_INET;
 	source_hints.ai_socktype = SOCK_DGRAM;
@@ -28,7 +31,7 @@ addrinfo Socket::getSourceHints(){
 
 addrinfo Socket::getDestinationHints(){
 	addrinfo destination_hints;
-	ZeroMemory(&destination_hints, sizeof(destination_hints));
+	memset(&destination_hints, 0, sizeof(destination_hints));
 	
 	destination_hints.ai_family = AF_INET;
 	destination_hints.ai_socktype = SOCK_DGRAM;
@@ -37,7 +40,7 @@ addrinfo Socket::getDestinationHints(){
 	return destination_hints;
 }
 
-addrinfo* Socket::resolveAddressInfo(PCSTR address, PCSTR port, addrinfo hints){
+addrinfo* Socket::resolveAddressInfo(const char* address, const char* port, addrinfo hints){
 	addrinfo* addrinfo_ptr;
 	int error_code = getaddrinfo(address, port, &hints, &addrinfo_ptr);
 	if(error_code != 0){
@@ -49,9 +52,9 @@ addrinfo* Socket::resolveAddressInfo(PCSTR address, PCSTR port, addrinfo hints){
 }
 
 bool Socket::createSocket(addrinfo* address){
-	socket_handle = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
+	file_descriptor = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
 	
-	if(socket_handle == INVALID_SOCKET){
+	if(file_descriptor == INVALID_SOCKET){
 		return false;
 	}
 
@@ -59,11 +62,11 @@ bool Socket::createSocket(addrinfo* address){
 }
 
 bool Socket::bindSocket(addrinfo* source){
-	int error_code = bind(socket_handle, source->ai_addr, source->ai_addrlen);
+	int error_code = bind(file_descriptor, source->ai_addr, source->ai_addrlen);
 
 	if(error_code == SOCKET_ERROR){
-		closesocket(socket_handle);
-		socket_handle = INVALID_SOCKET;
+		close(file_descriptor);
+		file_descriptor = INVALID_SOCKET;
 		return false;
 	}
 
@@ -71,11 +74,11 @@ bool Socket::bindSocket(addrinfo* source){
 }
 
 bool Socket::connectSocket(addrinfo* address){
-	int error_code = ::connect(socket_handle, address->ai_addr, (int)address->ai_addrlen);
+	int error_code = ::connect(file_descriptor, address->ai_addr, (int)address->ai_addrlen);
 
 	if(error_code == SOCKET_ERROR){
-		closesocket(socket_handle);
-		socket_handle = INVALID_SOCKET;
+		close(file_descriptor);
+		file_descriptor = INVALID_SOCKET;
 		return false;
 	}
 
@@ -88,7 +91,7 @@ bool Socket::connectSocket(addrinfo* address){
 	socklen_t len = sizeof(sin);
 	char m_s_host[INET_ADDRSTRLEN];
 
-	if (getsockname(socket_handle, (struct sockaddr *)&sin, &len) == SOCKET_ERROR){
+	if (getsockname(file_descriptor, (struct sockaddr *)&sin, &len) == SOCKET_ERROR){
 		std::cout << "Can't get source port\n";
 	}else{
 		inet_ntop(AF_INET, &(sin.sin_addr), m_s_host, INET_ADDRSTRLEN);
@@ -100,8 +103,8 @@ bool Socket::connectSocket(addrinfo* address){
 	return true;
 } 
 
-bool Socket::connect(PCSTR s_address, PCSTR s_port, PCSTR d_address, PCSTR d_port){
-	closesocket(socket_handle);
+bool Socket::connect(const char* s_address, const char* s_port, const char* d_address, const char* d_port){
+	close(file_descriptor);
 	addrinfo* attempt = NULL;
 	
 	addrinfo* s_addrinfo = resolveAddressInfo(s_address, s_port, getSourceHints());
@@ -128,7 +131,7 @@ bool Socket::connect(PCSTR s_address, PCSTR s_port, PCSTR d_address, PCSTR d_por
     freeaddrinfo(s_addrinfo);
 	freeaddrinfo(d_addrinfo);
 
-	if(socket_handle == INVALID_SOCKET){
+	if(file_descriptor == INVALID_SOCKET){
 		return false;
 	}
 
@@ -137,25 +140,22 @@ bool Socket::connect(PCSTR s_address, PCSTR s_port, PCSTR d_address, PCSTR d_por
 }
 
 void Socket::disconnect(){
-	closesocket(socket_handle);
-	socket_handle = INVALID_SOCKET;
+	close(file_descriptor);
+	file_descriptor = INVALID_SOCKET;
 }
 
 
-
+/*
 SendingTask<bool> Socket::send(const char* send_buffer, size_t send_buffer_size){
 	//TODO: check if socket is not nullptr
-	return SendingTask<bool>(socket_handle, send_buffer, send_buffer_size);
+	return SendingTask<bool>(file_descriptor, send_buffer, send_buffer_size);
 }
 
 RecvingTask<bool> Socket::recv(char* recv_buffer, size_t recv_buffer_size){
 	
-	return RecvingTask<bool>(socket_handle, recv_buffer, recv_buffer_size);
+	return RecvingTask<bool>(file_descriptor, recv_buffer, recv_buffer_size);
 }
-
+*/
 
 }
 }
-
-
-#endif

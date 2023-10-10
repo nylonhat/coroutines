@@ -1,3 +1,5 @@
+#ifdef _WIN32
+
 #include <iostream>
 
 #include "udp_socket_wsa.h"
@@ -35,4 +37,4 @@ BlockingTask<int> IOSystem::entry(){
 	co_return 0;
 }
 
-
+#endif

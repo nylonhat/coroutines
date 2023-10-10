@@ -1,3 +1,5 @@
+#if _WIN32
+
 #ifndef OVERLAP_CALLBACK_H
 #define OVERLAP_CALLBACK_H
 
@@ -16,5 +18,7 @@
 struct OverlapWithCallback : WSAOVERLAPPED {
 	std::function<void()> callback = nullptr;
 };
+
+#endif
 
 #endif

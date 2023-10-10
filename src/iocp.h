@@ -1,3 +1,5 @@
+#ifdef _WIN32
+
 #ifndef IOCP_H
 #define IOCP_H
 
@@ -22,5 +24,7 @@ struct IOCP {
 };
 
 }
+
+#endif
 
 #endif

@@ -1,3 +1,5 @@
+#ifdef _WIN32
+
 #include "overlap_callback.h"
 #include "iocp.h"
 
@@ -53,3 +55,6 @@ bool IOCP::addSocket(SOCKET socket_handle){
 
 
 }
+
+
+#endif
