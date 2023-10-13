@@ -28,19 +28,12 @@ struct [[nodiscard]] BranchedTask {
 
 			bool await_ready() noexcept {return false;}
 
-			std::coroutine_handle<> await_suspend (std::coroutine_handle<> handle) noexcept {
+			void await_suspend (std::coroutine_handle<> handle) noexcept {
 				
-				//Try to schedule branching task eagerly
-				bool was_scheduled = promise.scheduler.schedule([handle](){
+				return promise.scheduler.schedule([handle](){
 					handle.resume();
 				});
 
-				if(was_scheduled){
-					return std::noop_coroutine();
-				}
-				
-				//If we can't schedule, default to symmetric transfer
-				return handle; 
 			}
 
 			void await_resume() noexcept {}	
@@ -62,16 +55,10 @@ struct [[nodiscard]] BranchedTask {
 				promise.flag.signal_and_notify([this](std::coroutine_handle<> resuming_handle){
 					
 					//Schedule to resume coroutines that are waiting for result
-					bool was_scheduled = promise.scheduler.schedule([resuming_handle](){
+					promise.scheduler.schedule([resuming_handle](){
 						resuming_handle.resume();
 					});
 
-					if(was_scheduled){
-						return;
-					}
-
-					//If we can't schedule, just resume coroutines inline
-					resuming_handle.resume();
 				});
 				
 			}
@@ -150,6 +137,16 @@ BranchedTask<T, S> branch_by_value_on(S& scheduler, AWAITABLE<T> awaitable){
 template<Scheduler S, template<typename>typename AWAITABLE, typename T>
 BranchedTask<T, S> branch_by_reference_on(S& scheduler, AWAITABLE<T>& awaitable){
 	co_return co_await awaitable;
+};
+
+template<Scheduler S, template<typename>typename AWAITABLE, typename T>
+BranchedTask<T, S> branch_on(S& scheduler, AWAITABLE<T>&& awaitable){
+	return branch_by_value_on(scheduler, std::forward<AWAITABLE<T>>(awaitable));
+};
+
+template<Scheduler S, template<typename>typename AWAITABLE, typename T>
+BranchedTask<T, S> branch_on(S& scheduler, AWAITABLE<T>& awaitable){
+	return branch_by_reference_on(scheduler, awaitable);
 };
 
 

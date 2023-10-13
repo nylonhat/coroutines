@@ -10,11 +10,11 @@
 #include "timer.h"
 
 DAGSystem::DAGSystem()
-	: threadpool{8}
+	: threadpool{4}
 {}
 
 BlockingTask<int> DAGSystem::entry(){
-	int iterations = 10000;
+	int iterations = 1000000;
 
 	auto simulation = stressTest(iterations);
 
@@ -153,8 +153,8 @@ Task<int> DAGSystem::stressTest(int iterations){
 	timer.start();
 
 	for (int i=0; i< iterations; i++){
-		result += co_await branchesTest(8); 
-		
+		//result += co_await branchesTest(8);
+		result += co_await threadpool.chain(multiply(i, 1));
 		//std::cout << "iternation: " << i << "\n";
 	}
 

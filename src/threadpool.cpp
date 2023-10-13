@@ -7,7 +7,7 @@ Threadpool::Threadpool(int num_threads){
 		
 		while(running){
 			std::function<void()> task;
-			if(dequeue(task)){
+			if(try_dequeue(task)){
 				task();
 				backoff.easein();
 			}else{
@@ -26,12 +26,18 @@ Threadpool::~Threadpool(){
 	running.store(false);
 }
 
-bool Threadpool::schedule(std::function<void()> task){
-	return queue.try_enqueue(task);
+void Threadpool::schedule(std::function<void()> task){
+	if(queue.try_enqueue(task)){
+		return;
+	}
+
+	//Default to running task inline if can't schedule
+	//Tail call optimisation should work here
+	return task();
 }
 
 
-bool Threadpool::dequeue(std::function<void()>& task){
+bool Threadpool::try_dequeue(std::function<void()>& task){
 	return queue.try_dequeue(task);
 }
 

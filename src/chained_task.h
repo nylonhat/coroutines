@@ -45,20 +45,12 @@ struct ChainedTask {
 
 			bool await_ready() noexcept {return false;}
 
-			std::coroutine_handle<> await_suspend (std::coroutine_handle<> handle) noexcept {
+			void await_suspend (std::coroutine_handle<> handle) noexcept {
 
-				bool was_scheduled = promise.scheduler.schedule([this](){
+				return promise.scheduler.schedule([this](){
 					std::get<1>(promise.waiting_handle).resume();
 				});
 				
-				if(was_scheduled){
-					return std::noop_coroutine();
-				}
-				
-				//If can't schedule, default to symmetric transfer
-				return std::get<1>(promise.waiting_handle).resume();
-
-
 			}
 
 			void await_resume() noexcept {}	
@@ -121,22 +113,13 @@ struct ChainedTask {
 		return my_handle.done();
 	}
 
-	std::coroutine_handle<> await_suspend(std::coroutine_handle<> caller_handle) noexcept{
+	void await_suspend(std::coroutine_handle<> caller_handle) noexcept{
 		my_handle.promise().waiting_handle = caller_handle;
 		
-		//Try to schedule using scheduler
-		bool was_scheduled = my_handle.promise().scheduler.schedule([this](){
+		return my_handle.promise().scheduler.schedule([this](){
 			my_handle.resume();
 		});
 
-		
-		if(was_scheduled){
-			return std::noop_coroutine();
-		}
-
-		//If can't schedule, default to running symmetric transfer
-		return my_handle;
-		
 	}
 
 	T await_resume(){
@@ -157,6 +140,15 @@ ChainedTask<T, S> chain_by_reference_on(S& scheduler, AWAITABLE<T>& awaitable){
 	co_return co_await awaitable;
 };
 
+template<Scheduler S, template<typename>typename AWAITABLE, typename T>
+ChainedTask<T, S> chain_on(S& scheduler, AWAITABLE<T>&& awaitable){
+	return chain_by_value_on(scheduler, std::forward<AWAITABLE<T>>(awaitable));
+};
+
+template<Scheduler S, template<typename>typename AWAITABLE, typename T>
+ChainedTask<T, S> chain_on(S& scheduler, AWAITABLE<T>& awaitable){
+	return chain_by_reference_on(scheduler, awaitable);
+};
 
 
 #endif

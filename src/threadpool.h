@@ -38,27 +38,23 @@ public:
 	~Threadpool();
 	
 private:	
-	bool dequeue(std::function<void()>& task);
+	bool try_dequeue(std::function<void()>& task);
 
 public:
-	bool schedule(std::function<void()> task);
+	void schedule(std::function<void()> task);
 	
 	//Chaining Implementation
-	template<template<typename>typename AWAITABLE, typename T>
-	auto chain(AWAITABLE<T>&& awaitable){
-		return chain_by_value_on<Threadpool, AWAITABLE, T>(*this, std::forward<AWAITABLE<T>>(awaitable));
-	};
-
-	template<template<typename>typename AWAITABLE, typename T>
-	auto chain(AWAITABLE<T>& awaitable){
-		return chain_by_reference_on<Threadpool, AWAITABLE, T>(*this, awaitable);
-	};
+	template<typename A>
+	auto chain(A&& awaitable){
+		return chain_on(*this, std::forward<A>(awaitable));
+	}
 
 	//Branching Implementation	
-	template<template<typename>typename AWAITABLE, typename T>
-	auto branch(AWAITABLE<T>&& awaitable){
-		return branch_by_value_on<Threadpool, AWAITABLE, T>(*this, std::forward<AWAITABLE<T>>(awaitable));
-	};
+	template<typename A>
+	auto branch(A&& awaitable){
+		return branch_on(*this, std::forward<A>(awaitable));
+	}
+
 
 };
 
