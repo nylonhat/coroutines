@@ -7,7 +7,7 @@
 
 struct alignas(64) Backoff {
 	const unsigned int min_backoff_count = 0;
-	const unsigned int max_backoff_count = 15;
+	const unsigned int max_backoff_count = 21;
 	unsigned int backoff_count = 0;
 
 	std::minstd_rand random_generator{std::random_device{}()};
