@@ -5,7 +5,7 @@ Threadpool::Threadpool(int num_threads){
 	auto work = [this](){
 		Backoff backoff;
 		
-		while(running){
+		while(running.load()){
 			std::function<void()> task;
 			if(try_dequeue(task)){
 				task();
@@ -30,7 +30,7 @@ void Threadpool::schedule(std::function<void()> task){
 	if(queue.try_enqueue(task)){
 		return;
 	}
-
+	
 	//Default to running task inline if can't schedule
 	//Tail call optimisation should work here
 	return task();

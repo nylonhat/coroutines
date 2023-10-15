@@ -23,9 +23,9 @@ int main() {
 //	socket.connect(0, "21212", "10.0.0.109", "5555");
 
 	DAGSystem dag_system;
-	dag_system.entry().block_and_get();
-
+	dag_system.entry().await();
 	return 0;
+
 }
 
 

@@ -95,7 +95,7 @@ struct BlockingTask {
 
 	std::coroutine_handle<promise_type> my_handle;
 
-	T block_and_get() {
+	T await() {
 		if (my_handle.done()){
 			return my_handle.promise().value;		
 		}
@@ -109,11 +109,11 @@ struct BlockingTask {
 	}
 
 	T operator()(){
-		return block_and_get();
+		return await();
 	}
 
 	operator T(){
-		return block_and_get();
+		return await();
 	}
 
 	bool done(){
