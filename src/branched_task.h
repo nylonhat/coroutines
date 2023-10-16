@@ -141,7 +141,7 @@ BranchedTask<T, S> branch_by_reference_on(S& scheduler, AWAITABLE<T>& awaitable)
 
 template<Scheduler S, template<typename>typename AWAITABLE, typename T>
 BranchedTask<T, S> branch_on(S& scheduler, AWAITABLE<T>&& awaitable){
-	return branch_by_value_on(scheduler, std::forward<AWAITABLE<T>>(awaitable));
+	return branch_by_value_on(scheduler, std::move(awaitable));
 };
 
 template<Scheduler S, template<typename>typename AWAITABLE, typename T>
