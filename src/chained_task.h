@@ -142,7 +142,7 @@ ChainedTask<T, S> chain_by_reference_on(S& scheduler, AWAITABLE<T>& awaitable){
 
 template<Scheduler S, template<typename>typename AWAITABLE, typename T>
 ChainedTask<T, S> chain_on(S& scheduler, AWAITABLE<T>&& awaitable){
-	return chain_by_value_on(scheduler, std::forward<AWAITABLE<T>>(awaitable));
+	return chain_by_value_on(scheduler, std::move(awaitable));
 };
 
 template<Scheduler S, template<typename>typename AWAITABLE, typename T>
