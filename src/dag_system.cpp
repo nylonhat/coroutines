@@ -14,7 +14,7 @@ DAGSystem::DAGSystem()
 {}
 
 BlockingTask<int> DAGSystem::entry(){
-	int iterations = 1000000;
+	int iterations = 10000000;
 
 	auto simulation = stressTest(iterations);
 

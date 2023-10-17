@@ -9,7 +9,7 @@ Threadpool::Threadpool(int num_threads){
 			std::function<void()> task;
 			if(try_dequeue(task)){
 				task();
-				backoff.easein();
+				backoff.reset();
 			}else{
 				backoff.backoff();
 			}

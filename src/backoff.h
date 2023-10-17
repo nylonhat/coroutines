@@ -4,6 +4,7 @@
 #include <immintrin.h>
 #include <algorithm>
 #include <random>
+#include <iostream>
 
 struct alignas(64) Backoff {
 	const int min_backoff_count = 0;
