@@ -5,8 +5,6 @@
 #include <atomic>
 #include <coroutine>
 
-#include "atomic_flag.h"
-
 /**
  * A blocking task is a coroutine whose only purpose is
  * to interact with the main() function. Since main() is 
@@ -24,7 +22,7 @@ struct BlockingTask {
 
 	struct promise_type {
 		T value;
-		AtomicFlag flag;
+		std::atomic_flag flag = ATOMIC_FLAG_INIT;
 
 		BlockingTask get_return_object() { 
 			return {std::coroutine_handle<promise_type>::from_promise(*this)}; 
@@ -38,8 +36,9 @@ struct BlockingTask {
 			bool await_ready() noexcept {return false;}
 
 			std::coroutine_handle<> await_suspend (std::coroutine_handle<> handle) noexcept {
-				promise.flag.signal();
-
+				promise.flag.test_and_set();
+				promise.flag.notify_all();
+			
 				return std::noop_coroutine();
 			}
 
@@ -82,7 +81,8 @@ struct BlockingTask {
 
 	//Move Assigment
 	BlockingTask& operator=(BlockingTask&& rhs) = delete;
-
+	
+	//Destructor
 	~BlockingTask(){
 		if (my_handle){
 			my_handle.destroy(); 
@@ -102,8 +102,8 @@ struct BlockingTask {
 
 		my_handle.resume();
 
-		my_handle.promise().flag.wait();
-		my_handle.promise().flag.reset();
+		my_handle.promise().flag.wait(false);
+		my_handle.promise().flag.clear();
 		
 		return my_handle.promise().value;
 	}

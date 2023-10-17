@@ -10,11 +10,11 @@
 #include "timer.h"
 
 DAGSystem::DAGSystem()
-	: threadpool{8}
+	: threadpool{4}
 {}
 
 BlockingTask<int> DAGSystem::entry(){
-	int iterations = 100000000;
+	int iterations = 1000000;
 
 	auto simulation = stressTest(iterations);
 

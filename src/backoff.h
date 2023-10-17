@@ -6,10 +6,10 @@
 #include <random>
 
 struct alignas(64) Backoff {
-	const unsigned int min_backoff_count = 0;
-	const unsigned int max_backoff_count = 15;
+	const int min_backoff_count = 0;
+	const int max_backoff_count = 8;
 	
-	unsigned int backoff_count = 0;
+	int backoff_count = 0;
 
 	std::minstd_rand random_generator{std::random_device{}()};
 
@@ -19,10 +19,10 @@ struct alignas(64) Backoff {
 			return;
 		}
 
-		std::uniform_int_distribution<unsigned int> distribution(0, (1<<backoff_count)-1 );
-		//const unsigned int random_iterations = distribution(random_generator);
+		std::uniform_int_distribution<int> distribution(0, (1<<backoff_count)-1);
+		int random_iterations = distribution(random_generator);
 		
-		for (unsigned int i = 0; i < distribution(random_generator); i++){
+		for (unsigned int i = 0; i < random_iterations; i++){
 			_mm_pause();
 		}
 
