@@ -4,7 +4,9 @@
 #include <immintrin.h>
 #include <algorithm>
 #include <random>
-#include <iostream>
+#include <thread>
+
+using namespace std::literals::chrono_literals;
 
 struct alignas(64) Backoff {
 	const int min_backoff_count = 0;
@@ -16,7 +18,7 @@ struct alignas(64) Backoff {
 
 	void backoff(){
 		if (backoff_count == max_backoff_count){
-			std::this_thread::sleep_for(std::chrono::milliseconds(1));
+			std::this_thread::sleep_for(1ns);
 			return;
 		}
 
@@ -35,7 +37,7 @@ struct alignas(64) Backoff {
 	}
 
 	void easein(){
-		backoff_count = std::max(min_backoff_count, backoff_count - 2);
+		backoff_count = std::max(min_backoff_count, backoff_count - 1);
 	}
 
 
