@@ -6,27 +6,31 @@
 
 struct alignas(64) ThrottleNode {
 	std::atomic<bool> chained = false;
-	std::atomic<bool> contended = false;
+	std::atomic_flag contended = ATOMIC_FLAG_INIT;
 	std::atomic<ThrottleNode*> next_node_ptr = nullptr;
 
 	void setThrottle(bool is_contended){
-		if(next_node_ptr.load() == nullptr){
+		if(next_node_ptr == nullptr){
 			return;
 		}
 
-		if(next_node_ptr.load()->contended.load() == is_contended){
+		if(next_node_ptr.load()->contended.test() == is_contended){
 			return;
 		}
 
-		next_node_ptr.load()->contended.store(is_contended);
-		
-		if(!is_contended){
-			next_node_ptr.load()->contended.notify_one();
+		if(is_contended){
+			next_node_ptr.load()->contended.test_and_set();
+			return;
 		}
+
+		next_node_ptr.load()->contended.clear();
+		next_node_ptr.load()->contended.notify_one();
 	}
 
 	void throttle(){
-		contended.wait(true);
+		if(contended.test()){
+			contended.wait(true);
+		}
 	}
 };
 
