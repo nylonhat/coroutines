@@ -9,6 +9,7 @@
 #include "chained_task.h"
 #include "branched_task.h"
 #include "bounded_mpmc_queue.h"
+#include "throttle_chain.h"
 
 /**
  * A threadpool is a type of scheduler that has a queue
@@ -29,6 +30,7 @@ private:
 	bounded_mpmc_queue<std::function<void()>, 128> queue{};
 	std::atomic<bool> running{true};
 	std::vector<std::jthread> threads;
+	ThrottleChain throttle_chain{};
 
 public:
 	//Constructor

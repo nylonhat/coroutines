@@ -17,8 +17,8 @@ struct alignas(64) Backoff {
 	std::minstd_rand random_generator{std::random_device{}()};
 
 	void backoff(){
-		if (backoff_count == max_backoff_count){
-			std::this_thread::sleep_for(1ns);
+		if (isMaxBackoff()){
+			std::this_thread::sleep_for(1ms);
 			return;
 		}
 
@@ -38,6 +38,10 @@ struct alignas(64) Backoff {
 
 	void easein(){
 		backoff_count = std::max(min_backoff_count, backoff_count - 1);
+	}
+
+	bool isMaxBackoff(){
+		return backoff_count == max_backoff_count;
 	}
 
 

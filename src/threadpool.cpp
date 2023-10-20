@@ -3,17 +3,29 @@
 
 Threadpool::Threadpool(int num_threads){
 	auto work = [this](){
-		Backoff backoff;
+		ThrottleNode my_throttle_node{};
+		Backoff backoff{};
+
+		throttle_chain.add(my_throttle_node);
 		
 		while(running.load()){
+			my_throttle_node.throttle();
+
 			std::function<void()> task;
 			if(try_dequeue(task)){
 				task();
 				backoff.reset();
+				my_throttle_node.setThrottle(false);
 			}else{
 				backoff.backoff();
+				if(backoff.isMaxBackoff()){
+					my_throttle_node.setThrottle(true);
+				}
 			}
 		}
+		
+		my_throttle_node.setThrottle(false);
+		throttle_chain.remove(my_throttle_node);
 
 	};
 
