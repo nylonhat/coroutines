@@ -14,8 +14,10 @@ Threadpool::Threadpool(int num_threads){
 			std::function<void()> task;
 			if(try_dequeue(task)){
 				task();
-				backoff.reset();
-				my_throttle_node.setThrottle(false);
+				backoff.easein();
+				if(backoff.isMinBackoff()){
+					my_throttle_node.setThrottle(false);
+				}
 			}else{
 				backoff.backoff();
 				if(backoff.isMaxBackoff()){

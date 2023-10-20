@@ -37,13 +37,27 @@ struct alignas(64) Backoff {
 	}
 
 	void easein(){
+		if (isMinBackoff()){
+			return;
+		}
+
+		std::uniform_int_distribution<int> distribution(0, (1<<backoff_count)-1);
+		int random_iterations = distribution(random_generator);
+		
+		for (unsigned int i = 0; i < random_iterations; i++){
+			_mm_pause();
+		}
+
 		backoff_count = std::max(min_backoff_count, backoff_count - 1);
 	}
 
 	bool isMaxBackoff(){
 		return backoff_count == max_backoff_count;
 	}
-
+	
+	bool isMinBackoff(){
+		return backoff_count == min_backoff_count;
+	}
 
 
 };
