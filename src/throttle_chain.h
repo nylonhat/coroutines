@@ -66,6 +66,7 @@ struct ThrottleChain {
 
 		}
 
+		node_to_remove.setThrottle(false);
 		node_to_remove.next_node_ptr.load()->chained.store(false);
 		node_to_remove.next_node_ptr.load()->chained.notify_one();
 		
