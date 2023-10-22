@@ -50,6 +50,8 @@ struct ChainedTask {
 				return promise.scheduler.schedule([this](){
 					std::get<1>(promise.waiting_handle).resume();
 				});
+
+				//return std::get<1>(promise.waiting_handle);
 				
 			}
 

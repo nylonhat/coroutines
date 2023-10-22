@@ -10,7 +10,7 @@
 #include "timer.h"
 
 DAGSystem::DAGSystem()
-	: threadpool{3}
+	: threadpool{1}
 {}
 
 BlockingTask<int> DAGSystem::entry(){
