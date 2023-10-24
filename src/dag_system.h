@@ -2,6 +2,7 @@
 #define DAG_SYSTEM_H
 
 #include "threadpool.h"
+#include "work_steal_pool.h"
 #include "task.h"
 #include "blocking_task.h"
 
@@ -11,7 +12,7 @@ concept Branchable = requires(B b){
 };
 
 struct DAGSystem {
-	Threadpool threadpool;
+	WorkStealPool threadpool;
 
 	DAGSystem();
 	
@@ -25,7 +26,7 @@ struct DAGSystem {
 	Task<int> B();
 	Task<int> C();
 	Task<int> D(auto& b);
-	Task<int> E(BranchedTask<int, Threadpool>& b);
+	Task<int> E(auto& b);
 	Task<int> F();
 	Task<int> dagTest();
 	Task<int> branchesTest(int num_branches);

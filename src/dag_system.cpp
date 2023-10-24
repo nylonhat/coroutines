@@ -10,11 +10,11 @@
 #include "timer.h"
 
 DAGSystem::DAGSystem()
-	: threadpool{1}
+	: threadpool(2)
 {}
 
 BlockingTask<int> DAGSystem::entry(){
-	int iterations = 100000000;
+	int iterations = 10'000'000;
 
 	auto simulation = stressTest(iterations);
 
@@ -78,7 +78,7 @@ Task<int> DAGSystem::D(auto& b){
 	co_return co_await a + co_await b;
 }
 
-Task<int> DAGSystem::E(BranchedTask<int, Threadpool>& b){
+Task<int> DAGSystem::E(auto& b){
 	auto c = threadpool.branch(C());
 	//auto c = C();
 	co_return co_await b + co_await c;
@@ -111,7 +111,7 @@ Task<int> DAGSystem::dagTest(){
 
 Task<int> DAGSystem::branchesTest(int num_branches){
 	unsigned int result = 0;
-	using Branch = std::variant<std::monostate, BranchedTask<int, Threadpool>>;
+	using Branch = std::variant<std::monostate, BranchedTask<int, WorkStealPool>>;
 	
 	std::array<Branch, 8> branches;
 	
@@ -129,7 +129,7 @@ Task<int> DAGSystem::branchesTest(int num_branches){
 
 Task<int> DAGSystem::branchesVectorTest(int num_branches){
 	unsigned int result = 0;	
-	std::vector<BranchedTask<int, Threadpool>> branches;
+	std::vector<BranchedTask<int, WorkStealPool>> branches;
 	branches.reserve(num_branches); 	
 	
 	for(int i = 0; i < num_branches; i++){
