@@ -18,7 +18,7 @@ private:
 	std::vector<std::jthread> threads;
 	thread_local static int worker_id;
 	std::atomic<int> worker_id_ticket = 0;
-	std::array< bounded_mpmc_queue<std::function<void()>,8>, 4> queues{};
+	std::array< bounded_mpmc_queue<std::function<void()>,8>, 16> queues{};
 
 public:
 	//Constructor

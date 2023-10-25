@@ -4,7 +4,7 @@
 //Modified from https://www.1024cores.net/home/lock-free-algorithms/queues/bounded-mpmc-queue
 
 template<typename T, size_t buffer_size>
-class bounded_mpmc_queue{
+class alignas(64) bounded_mpmc_queue{
 
 public:
 	//constructor
@@ -101,6 +101,7 @@ public:
 		return true;
 	}
 
+
 private:
 
 	struct alignas(64) cell_t{
@@ -109,18 +110,18 @@ private:
 
 	};
 
-	static size_t const cacheline_size = 64;
-	typedef char cacheline_pad_t [cacheline_size];
+	//static size_t const cacheline_size = 64;
+	//typedef char cacheline_pad_t [cacheline_size];
 	
 	//Member variables
-	cacheline_pad_t pad0_;
+	//cacheline_pad_t pad0_;
 	cell_t buffer_[buffer_size];
 	size_t const buffer_mask_;
-	cacheline_pad_t  pad1_;
-	std::atomic<size_t>  enqueue_pos_;
-	cacheline_pad_t pad2_;
-	std::atomic<size_t> dequeue_pos_;
-	cacheline_pad_t pad3_;
+	//cacheline_pad_t  pad1_;
+	alignas(64) std::atomic<size_t>  enqueue_pos_;
+	//cacheline_pad_t pad2_;
+	alignas(64) std::atomic<size_t> dequeue_pos_;
+	//cacheline_pad_t pad3_;
 
 	//Copy constructor
 	bounded_mpmc_queue(bounded_mpmc_queue const&);

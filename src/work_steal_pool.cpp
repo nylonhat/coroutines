@@ -3,7 +3,7 @@
 #include <random>
 
 WorkStealPool::WorkStealPool(int num_threads){
-	
+
 	//define worker loop
 	auto work = [this](){
 		Backoff backoff;
@@ -11,7 +11,7 @@ WorkStealPool::WorkStealPool(int num_threads){
 		//assign each worker a unique id representing queue index
 		worker_id = worker_id_ticket.fetch_add(1);
 		
-	//	std::minstd_rand random_generator{std::random_device{}()};
+		std::minstd_rand random_generator{std::random_device{}()};
 
 		while(running.load()){
 
@@ -19,19 +19,21 @@ WorkStealPool::WorkStealPool(int num_threads){
 			//dequeue from threads own queue first
 			if(queues.at(worker_id).try_dequeue(task)){
 				task();
-				backoff.easein();
 				continue;
 			}
-			backoff.backoff();
-
+				
 			//try to steal from other another random queue
-			//std::uniform_int_distribution<int> distribution(0,worker_id_ticket.load() -1);
-			//int random_index = distribution(random_generator);
+			std::uniform_int_distribution<int> distribution(0,worker_id_ticket.load() -1);
+			int random_index = distribution(random_generator);
 			
-			//if(queues.at(random_index).try_dequeue(task)){
-			//	task();
-			//	continue;
-			//}
+			if(queues.at(random_index).try_dequeue(task)){
+				task();
+				backoff.reset();
+				continue;
+			}
+
+			backoff.backoff();
+			
 		}
 
 	};
