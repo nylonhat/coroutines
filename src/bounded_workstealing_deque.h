@@ -56,6 +56,10 @@ public:
 		//check if deque is empty
 		//might race for last item with stealers
 		size_t expected = stack_position;	
+		
+
+		//ABA BUG! - stealers may see sequence has not changed
+		//when infact it decremented and then incremented
 		if(cell->sequence.compare_exchange_strong(expected, stack_position-1)){
 			//won race 
 			data = optimistic_data;
@@ -71,14 +75,13 @@ public:
 	}
 
 	bool try_steal(T& data){
-		/*
 		cell_t* cell;
 		T optimistic_data;
-		size_t pos = steal_position.load(std::memory_order_relaxed);
+		size_t pos = steal_position.load(std::memory_order_seq_cst);
 
 		for(;;){
 			cell = &buffer[pos & buffer_mask];
-			size_t seq = cell->sequence.load(std::memory_order_acquire);
+			size_t seq = cell->sequence.load(std::memory_order_seq_cst);
 			intptr_t dif = (intptr_t)seq - (intptr_t)(pos + 1);
 			
 			size_t expected = pos + 1;
@@ -91,12 +94,12 @@ public:
 				//race for cell with other stealers and local pop
 				if(cell->sequence.compare_exchange_weak(expected, desired)){
 					//won race
-					steal_position.fetch_add(1, std::memory_order_relaxed);
+					steal_position.fetch_add(1, std::memory_order_seq_cst);
 					break;
 				}
 
 				//else try again
-				pos = steal_position.load(std::memory_order_relaxed);
+				pos = steal_position.load(std::memory_order_seq_cst);
 
 			}
 			
@@ -107,14 +110,13 @@ public:
 
 			//we were beat out by another stealer; try again
 			else{
-				pos = steal_position.load(std::memory_order_relaxed);
+				pos = steal_position.load(std::memory_order_seq_cst);
 			}
 		}
 
 		data = optimistic_data;
 		return true;
-		*/
-		return false;
+		
 	}
 
 	
