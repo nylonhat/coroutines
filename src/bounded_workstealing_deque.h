@@ -26,20 +26,19 @@ public:
 
 	
 	bool try_local_push(T const& data){
-		//check potential cell to push onto local stack end
+		//Check potential cell to push onto local stack end
 		cell_t* cell = &buffer[stack_position & buffer_mask];
 		size_t seq = cell->sequence.load(std::memory_order_acquire);
 		
-		//check if deque is full
+		//Check if deque is full
 		if(seq != stack_position){
-			//deque is full
+			//Deque is full
 			return false;
 		}
 
-		//push data into cell
 		cell->data = data;
 
-		//update sequence and release info to other dequeuers
+		//Release info to other dequeuers that cell has new data
 		cell->sequence.store(stack_position + 1, std::memory_order_release);
 		
 		stack_position++;
@@ -47,38 +46,42 @@ public:
 	}
 
 	bool try_local_pop(T& data){
-		//check cell to pop off stack end
+		//Check potential cell to pop off stack end
 		cell_t* cell = &buffer[(stack_position-1) & buffer_mask];
 
-		//preemptively modify the cell sequence if deque not empty
-		//will signal any far away stealers that queue is empty now
+		//Preemptively reverse the cell sequence if deque is not empty
+		//Will signal any lagging stealers that queue is empty now
 		size_t expected_seq = stack_position;
-		if(cell->sequence.compare_exchange_strong(expected_seq, stack_position-1)){
+		if(cell->sequence.compare_exchange_strong(expected_seq, stack_position-1, std::memory_order_acq_rel)){
 			
-			//attempt to race with potential stealers
+			//Attempt to race with any potential stealers
 			size_t expected_steal = stack_position-1;
 			if(steal_position.compare_exchange_strong(expected_steal, stack_position, std::memory_order_relaxed)){
-				//stole last item in deque; beating stealer
+				//Beat stealers, meaning we stole the last item from the deque
 				data = cell->data;
+
+				//Modify cell sequence to be as if we stole like a stealer
 				steal_position.store(expected_steal+buffer_mask+1, std::memory_order_release);
 				stack_position--;
 				return true;
 			}
 			
-			//note: expected_steal is now loaded with value from CAS
+			//Check if we failed to get last item in deque
+			//Note: expected_steal is now loaded with value from previous CAS
 			if(expected_steal == stack_position){
-				//lost race to stealer for the last item
+				//Lost race to stealer for the last item
+				//Deque must now be empty
 				return false;
 			}
 
-			//item is not the last item
-			//free to take because lagging stealers think deque is empty
+			//Item was not the last item
+			//Free to take because lagging stealers think the deque is empty
 			data = cell->data;
 			stack_position--;
 			return true;
 		}
 		
-		//deque is empty
+		//Deque is empty
 		return false;
 	}
 
@@ -87,33 +90,35 @@ public:
 		size_t pos = steal_position.load(std::memory_order_relaxed);
 
 		for(;;){
+			//Check potential cell to steal from
 			cell = &buffer[pos & buffer_mask];
 			size_t seq = cell->sequence.load(std::memory_order_acquire);
 			intptr_t dif = (intptr_t)seq - (intptr_t)(pos + 1);
 			
-			//We can potentially claim the front dequeue position
+			//We can potentially claim the steal position
 			if(dif == 0){
-				//Try to claim position
+				//Race for the steal position
 				if(steal_position.compare_exchange_weak(pos, pos + 1, std::memory_order_relaxed)){
-					//Successfully claimed position
+					//Success: we are free to steal item from deque
 					break;
 				}
-				//Else try all over again
+				//We lost the race; try all over again
 			}
 			
-			//Fail if queue is empty
+			//Deque is empty
 			else if(dif < 0){
 				return false;
 			}
 			
-			//We were beat out to the front; try again
+			//We are lagging behind the other stealers; try again
 			else{
 				pos = steal_position.load(std::memory_order_relaxed);
 			}
 		}
 		
-		//Read data out from the queue
 		data = cell->data;
+
+		//Release info to others that cell has been stolen
 		cell->sequence.store(pos + buffer_mask + 1, std::memory_order_release);
 		return true;
 			
