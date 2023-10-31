@@ -47,76 +47,77 @@ public:
 	}
 
 	bool try_local_pop(T& data){
-		//check potential cell to pop off local stack end
+		//check cell to pop off stack end
 		cell_t* cell = &buffer[(stack_position-1) & buffer_mask];
-		
-		//read data knowing it may be invalid
-		T optimistic_data = cell->data;
-		
-		//check if deque is empty
-		//might race for last item with stealers
-		size_t expected = stack_position;	
-		
 
-		//ABA BUG! - stealers may see sequence has not changed
-		//when infact it decremented and then incremented
-		if(cell->sequence.compare_exchange_strong(expected, stack_position-1)){
-			//won race 
-			data = optimistic_data;
+		//preemptively modify the cell sequence if deque not empty
+		//will signal any far away stealers that queue is empty now
+		size_t expected_seq = stack_position;
+		if(cell->sequence.compare_exchange_strong(expected_seq, stack_position-1)){
+			
+			//attempt to race with potential stealers
+			size_t expected_steal = stack_position-1;
+			if(steal_position.compare_exchange_strong(expected_steal, stack_position, std::memory_order_relaxed)){
+				//stole last item in deque; beating stealer
+				data = cell->data;
+				steal_position.store(expected_steal+buffer_mask+1, std::memory_order_release);
+				stack_position--;
+				return true;
+			}
+			
+			//note: expected_steal is now loaded with value from CAS
+			if(expected_steal == stack_position){
+				//lost race to stealer for the last item
+				return false;
+			}
+
+			//item is not the last item
+			//free to take because lagging stealers think deque is empty
+			data = cell->data;
 			stack_position--;
 			return true;
 		}
 		
-		//deque was already empty or
-		//lost fight with stealer; deque must now be empty
+		//deque is empty
 		return false;
-
-
 	}
 
 	bool try_steal(T& data){
 		cell_t* cell;
-		T optimistic_data;
-		size_t pos = steal_position.load(std::memory_order_seq_cst);
+		size_t pos = steal_position.load(std::memory_order_relaxed);
 
 		for(;;){
 			cell = &buffer[pos & buffer_mask];
-			size_t seq = cell->sequence.load(std::memory_order_seq_cst);
+			size_t seq = cell->sequence.load(std::memory_order_acquire);
 			intptr_t dif = (intptr_t)seq - (intptr_t)(pos + 1);
 			
-			size_t expected = pos + 1;
-			size_t desired = pos + buffer_mask + 1;
-
-			//can we potentially steal
+			//We can potentially claim the front dequeue position
 			if(dif == 0){
-				optimistic_data = cell->data;
-
-				//race for cell with other stealers and local pop
-				if(cell->sequence.compare_exchange_weak(expected, desired)){
-					//won race
-					steal_position.fetch_add(1, std::memory_order_seq_cst);
+				//Try to claim position
+				if(steal_position.compare_exchange_weak(pos, pos + 1, std::memory_order_relaxed)){
+					//Successfully claimed position
 					break;
 				}
-
-				//else try again
-				pos = steal_position.load(std::memory_order_seq_cst);
-
+				//Else try all over again
 			}
 			
-			//deque is empty
+			//Fail if queue is empty
 			else if(dif < 0){
 				return false;
 			}
-
-			//we were beat out by another stealer; try again
+			
+			//We were beat out to the front; try again
 			else{
-				pos = steal_position.load(std::memory_order_seq_cst);
+				pos = steal_position.load(std::memory_order_relaxed);
 			}
 		}
-
-		data = optimistic_data;
-		return true;
 		
+		//Read data out from the queue
+		data = cell->data;
+		cell->sequence.store(pos + buffer_mask + 1, std::memory_order_release);
+		return true;
+			
+
 	}
 
 	
