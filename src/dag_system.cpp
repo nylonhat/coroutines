@@ -14,7 +14,7 @@ DAGSystem::DAGSystem()
 {}
 
 BlockingTask<int> DAGSystem::entry(){
-	int iterations = 10'000'000;
+	int iterations = 1'000'000;
 
 	auto simulation = stressTest(iterations);
 
@@ -36,8 +36,10 @@ Task<int> DAGSystem::multiply(int a, int b){
 }
 
 Task<int> DAGSystem::permutation (){
+	 
+	//std::cout << "perm on thread: " << std::this_thread::get_id() << "\n";
 	unsigned int count = 0;
-	std::array<int, 8> array {0, 1, 2, 3, 4, 5, 6, 7};
+	std::array<int, 9> array {0, 1, 2, 3, 4, 5, 6, 7, 8};
 	while(std::next_permutation(array.begin(), array.end())){
 		count++;
 	}
@@ -113,7 +115,7 @@ Task<int> DAGSystem::branchesTest(int num_branches){
 	unsigned int result = 0;
 	using Branch = std::variant<std::monostate, BranchedTask<int, WorkStealPool>>;
 	
-	std::array<Branch, 8> branches;
+	std::array<Branch, 32> branches;
 	
 	for(auto& branch : branches){
 		branch.emplace<1> (threadpool.branch(permutation()));
@@ -154,7 +156,7 @@ Task<int> DAGSystem::stressTest(int iterations){
 
 	for (int i=0; i< iterations; i++){
 		//result += co_await branchesTest(8);
-		//result += co_await threadpool.branch(multiply(i, 1));
+		//auto branch = threadpool.branch(multiply(i, 1));
 		//std::cout << "iternation: " << i << "\n";
 		result += co_await threadpool.chain(multiply(i, 1));
 	}

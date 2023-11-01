@@ -1,6 +1,7 @@
 #ifndef BOUNDED_WORKSTEALING_DEQUE_H
 #define BOUNDED_WORKSTEALING_DEQUE_H
 
+#include <iostream>
 
 template<typename T, size_t buffer_size>
 class bounded_workstealing_deque{
@@ -46,6 +47,7 @@ public:
 	}
 
 	bool try_local_pop(T& data){
+		//std::cout << "stack position:" << stack_position << "\n";
 		//Check potential cell to pop off stack end
 		cell_t* cell = &buffer[(stack_position-1) & buffer_mask];
 
@@ -61,8 +63,7 @@ public:
 				data = cell->data;
 
 				//Modify cell sequence to be as if we stole like a stealer
-				steal_position.store(expected_steal+buffer_mask+1, std::memory_order_release);
-				stack_position--;
+				cell->sequence.store(expected_steal+buffer_mask+1, std::memory_order_release);
 				return true;
 			}
 			
