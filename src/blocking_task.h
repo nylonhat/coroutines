@@ -4,6 +4,7 @@
 #include <variant>
 #include <atomic>
 #include <coroutine>
+#include <thread>
 
 /**
  * A blocking task is a coroutine whose only purpose is

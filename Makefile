@@ -1,7 +1,7 @@
 CLANG := clang++
 GCC := g++ -fcoroutines
 
-CXX := $(CLANG) -std=c++20 -flto #-fsanitize=thread
+CXX := $(CLANG) -std=c++20 #-flto #-fsanitize=thread
 
 CXXFLAGS := -Wall -g -O3 -march=native
 
@@ -11,7 +11,7 @@ OBJPATH := $(BINPATH)/obj
 
 LIBPATHS := ./dep/lib
 ifdef OS
-	LIBFLAGS := -lSynchronization -lWs2_32
+	LIBFLAGS :=  -lWs2_32 #-lSynchronization
 else
 	LIBFLAGS := -luring
 endif

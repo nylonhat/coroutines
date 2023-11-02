@@ -22,24 +22,26 @@ WorkStealPool::WorkStealPool(int num_threads){
 				task();
 				continue;
 			}
-				
-			//try to steal from other another random queue
-			std::uniform_int_distribution<int> distribution(0,worker_id_ticket.load() -1);
-			int random_index = distribution(random_generator);
 			
-			if(queues.at(random_index).try_steal(task)){
-				task();
-				backoff.reset();
-				continue;
-			}
-
-			backoff.backoff();
-
 			if(master_queue.try_dequeue(task)){
 				task();
 				continue;
 			}
+
+			//try to steal from other random queues
+			std::uniform_int_distribution<int> distribution(0,worker_id_ticket.load() -1);
+			for(int i=0; i<0; i++){
+				int random_index = distribution(random_generator);
 			
+				if(queues.at(random_index).try_steal(task)){
+					task();
+					backoff.reset();
+					continue;
+				}
+			}
+			
+			backoff.backoff();
+
 		}
 
 	};
