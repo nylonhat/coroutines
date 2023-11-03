@@ -1,9 +1,13 @@
 CLANG := clang++
+ifdef OS
+	CLANG += -femulated-tls
+endif
+
 GCC := g++ -fcoroutines
 
-CXX := $(CLANG) -std=c++20 #-flto #-fsanitize=thread
+CXX := $(CLANG) -std=c++20#-flto #-fsanitize=thread
 
-CXXFLAGS := -Wall -g -O3 #-march=native
+CXXFLAGS := -Wall -g -O3#-march=native
 
 SRCPATH := ./src
 BINPATH := ./bin
@@ -11,7 +15,7 @@ OBJPATH := $(BINPATH)/obj
 
 LIBPATHS := ./dep/lib
 ifdef OS
-	LIBFLAGS :=  -lWs2_32 #-lSynchronization
+	LIBFLAGS := -lWs2_32#-lSynchronization
 else
 	LIBFLAGS := -luring
 endif
