@@ -3,7 +3,7 @@ GCC := g++ -fcoroutines
 
 CXX := $(CLANG) -std=c++20 #-flto #-fsanitize=thread
 
-CXXFLAGS := -Wall -g -O3 -march=native
+CXXFLAGS := -Wall -g -O3 #-march=native
 
 SRCPATH := ./src
 BINPATH := ./bin

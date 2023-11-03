@@ -25,7 +25,7 @@ struct alignas(64) Backoff {
 		std::uniform_int_distribution<int> distribution(0, (1<<backoff_count)-1);
 		int random_iterations = distribution(random_generator);
 		
-		for (unsigned int i = 0; i < random_iterations; i++){
+		for (int i = 0; i < random_iterations; i++){
 			_mm_pause();
 		}
 
@@ -44,7 +44,7 @@ struct alignas(64) Backoff {
 		std::uniform_int_distribution<int> distribution(0, (1<<backoff_count)-1);
 		int random_iterations = distribution(random_generator);
 		
-		for (unsigned int i = 0; i < random_iterations; i++){
+		for (int i = 0; i < random_iterations; i++){
 			_mm_pause();
 		}
 

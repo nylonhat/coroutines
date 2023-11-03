@@ -1,6 +1,11 @@
 #include "backoff.h"
 #include "work_steal_pool.h"
 #include <random>
+#include <iostream>
+
+thread_local int WorkStealPool::worker_id = 0;
+thread_local WorkStealPool* WorkStealPool::my_pool = nullptr;
+
 
 WorkStealPool::WorkStealPool(int num_threads){
 
@@ -11,13 +16,14 @@ WorkStealPool::WorkStealPool(int num_threads){
 		//assign each worker a unique id representing queue index
 		my_pool = this;
 		worker_id = worker_id_ticket.fetch_add(1);
+		//std::cout << "pool: " << my_pool << ", worker id: " << worker_id << "\n";
 		
 		std::minstd_rand random_generator{std::random_device{}()};
 
 		while(running.load()){
 
 			std::function<void()> task;
-			//dequeue from threads own queue first
+			//dequeue from threads own queue first 
 			if(queues.at(worker_id).try_local_pop(task)){
 				task();
 				continue;
@@ -76,6 +82,5 @@ void WorkStealPool::schedule(std::function<void()> task){
 }
 
 
-thread_local int WorkStealPool::worker_id = 0;
-thread_local WorkStealPool* WorkStealPool::my_pool = nullptr;
+
 
