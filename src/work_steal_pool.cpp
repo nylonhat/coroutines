@@ -19,7 +19,7 @@ WorkStealPool::WorkStealPool(int num_threads){
 
 		while(running.load()){
 
-			std::function<void()> task;
+			std::coroutine_handle<> task;
 			//dequeue from threads own queue first 
 			if(queues.at(worker_id).try_local_pop(task)){
 				task();
@@ -59,7 +59,7 @@ WorkStealPool::~WorkStealPool(){
 	running.store(false);
 }
 
-void WorkStealPool::schedule(std::function<void()> task){
+void WorkStealPool::schedule(std::coroutine_handle<> task){
 	if(my_pool != this){
 		if(master_queue.try_enqueue(task)){
 			return;

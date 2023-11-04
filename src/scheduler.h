@@ -3,9 +3,10 @@
 
 #include<concepts>
 #include<functional>
+#include <coroutine>
 
 template<typename S>
-concept Scheduler = requires(S s, std::function<void()> func){
+concept Scheduler = requires(S s, std::coroutine_handle<> func){
 	s.schedule(func);
 };
 

@@ -5,6 +5,7 @@
 #include <thread>
 #include <functional>
 #include <utility>
+#include <coroutine>
 
 #include "chained_task.h"
 #include "branched_task.h"
@@ -20,9 +21,8 @@ private:
 	thread_local static WorkStealPool* my_pool;
 
 	std::atomic<int> worker_id_ticket = 0;
-	//std::array< bounded_mpmc_queue<std::function<void()>,8>, 16> queues{};
-	std::array< bounded_workstealing_deque<std::function<void()>,8>, 16> queues{};
-	bounded_mpmc_queue<std::function<void()>, 8> master_queue{};
+	std::array< bounded_workstealing_deque<std::coroutine_handle<>,8>, 16> queues{};
+	bounded_mpmc_queue<std::coroutine_handle<>, 8> master_queue{};
 
 public:
 	//Constructor
@@ -34,7 +34,7 @@ public:
 private:	
 
 public:
-	void schedule(std::function<void()> task);
+	void schedule(std::coroutine_handle<> task);
 	
 	
 	//Chaining Implementation
