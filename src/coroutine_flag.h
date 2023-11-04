@@ -4,14 +4,15 @@
 #include <atomic>
 #include <coroutine>
 #include <functional>
+#include "scheduler.h"
 
 template<typename T>
 struct CoroFlag {
 	mutable std::atomic<void*> head_of_awaiter_list = nullptr;
-	std::function<T(void)> result_callback = nullptr;
+	T& result_reference;
 
-	CoroFlag(std::function<T(void)> callback) 
-		: result_callback{callback}	{
+	CoroFlag(T& result) 
+		: result_reference{result}	{
 	}
 
 	~CoroFlag(){
@@ -23,7 +24,8 @@ struct CoroFlag {
 		return head_of_awaiter_list.load() == static_cast<const void*>(this);
 	}
 
-	void signal_and_notify(std::function<void(std::coroutine_handle<>)> notify_function){
+	template<Scheduler S>
+	void signal_and_notify(S& scheduler){
 		//Signal set by exchanging the head of list with 'set' state
 		auto* current_awaiter = static_cast<Awaiter*> (head_of_awaiter_list.exchange(static_cast<void*>(this)) );
 		
@@ -34,7 +36,7 @@ struct CoroFlag {
 			auto* temp_next_awaiter = current_awaiter->next_awaiter;
 			
 			//Provide a custom scheduling function
-			notify_function(current_awaiter->waiting_handle);
+			scheduler.schedule(current_awaiter->waiting_handle);
 
 			current_awaiter = temp_next_awaiter;
 		}
@@ -79,8 +81,7 @@ struct CoroFlag {
 		}
 
 		T await_resume(){
-			assert(flag.result_callback != nullptr);
-			return flag.result_callback();
+			return flag.result_reference;
 		}
 
 	};

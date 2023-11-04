@@ -1,7 +1,6 @@
 #ifndef DAG_SYSTEM_H
 #define DAG_SYSTEM_H
 
-#include "threadpool.h"
 #include "work_steal_pool.h"
 #include "task.h"
 #include "blocking_task.h"

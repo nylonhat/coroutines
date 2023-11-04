@@ -157,7 +157,7 @@ Task<int> DAGSystem::stressTest(int iterations){
 
 	for (int i=0; i< iterations; i++){
 		//result += co_await branchesTest(8);
-		//auto branch = threadpool.branch(multiply(i, 1));
+		//result += co_await threadpool.branch(multiply(i, 1));
 		//std::cout << "iternation: " << i << "\n";
 		result += co_await threadpool.chain(multiply(i, 1));
 		//result += co_await multiply(i,1);

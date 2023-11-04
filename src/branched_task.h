@@ -14,9 +14,9 @@ struct [[nodiscard]] BranchedTask {
 		CoroFlag<T> flag;
 
 		template<template<typename>typename AWAITABLE>
-		promise_type(S& tp, AWAITABLE<T> &awaitable)
-			:scheduler{tp}
-			,flag{[this](){return value;}}
+		promise_type(S& scheduler, AWAITABLE<T> &awaitable)
+			:scheduler{scheduler}
+			,flag(value)
 		{
 		}
 
@@ -51,13 +51,8 @@ struct [[nodiscard]] BranchedTask {
 			void await_suspend (std::coroutine_handle<> handle) noexcept {
 				
 				//Set signal to stop any more coroutines from registering to wait on result
-				promise.flag.signal_and_notify([this](std::coroutine_handle<> resuming_handle){
+				promise.flag.signal_and_notify(promise.scheduler);
 					
-					//Schedule to resume coroutines that are waiting for result
-					promise.scheduler.schedule(resuming_handle);
-
-				});
-				
 			}
 
 			void await_resume() noexcept {}	
