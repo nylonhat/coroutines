@@ -48,10 +48,7 @@ struct ChainedTask {
 			void await_suspend (std::coroutine_handle<> handle) noexcept {
 
 				return promise.scheduler.schedule(std::get<1>(promise.waiting_handle));
-				
-
 				//return std::get<1>(promise.waiting_handle);
-				
 			}
 
 			void await_resume() noexcept {}	
