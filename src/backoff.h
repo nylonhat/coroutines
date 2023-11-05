@@ -10,7 +10,7 @@ using namespace std::literals::chrono_literals;
 
 struct alignas(64) Backoff {
 	const int min_backoff_count = 0;
-	const int max_backoff_count = 8;
+	const int max_backoff_count = 9;
 	
 	int backoff_count = 0;
 

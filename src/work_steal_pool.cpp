@@ -33,17 +33,21 @@ WorkStealPool::WorkStealPool(int num_threads){
 
 			//try to steal from other random queues
 			std::uniform_int_distribution<int> distribution(0,worker_id_ticket.load() -1);
-			for(int i=0; i<0; i++){
+			for(int i=0; i<worker_id_ticket.load()-1;  i++){
 				int random_index = distribution(random_generator);
 			
 				if(queues.at(random_index).try_steal(task)){
 					task();
 					backoff.reset();
-					continue;
+					break;
 				}
 			}
 			
-			//backoff.backoff();
+			if(worker_id == 0){
+				continue;
+			}
+
+			backoff.backoff();
 
 		}
 
