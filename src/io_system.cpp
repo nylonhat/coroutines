@@ -5,13 +5,11 @@
 #include "udp_socket_wsa.h"
 #include "io_system.h"
 #include "task.h"
-#include "threadpool.h"
 #include "iocp.h"
 #include "blocking_task.h"
 
 IOSystem::IOSystem()
-	: threadpool(2)
-	, iocp()
+	: iocp()
 {}
 
 BlockingTask<int> IOSystem::entry(){

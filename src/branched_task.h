@@ -9,7 +9,7 @@
 template<typename T, Scheduler S>
 struct [[nodiscard]] BranchedTask {
 	struct promise_type {
-		T value;
+		T value{};
 		S& scheduler;
 		CoroFlag<T> flag;
 
