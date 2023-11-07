@@ -31,6 +31,7 @@ struct DAGSystem {
 	Task<int> branchesTest(int num_branches);
 	Task<int> branchesVectorTest(int num_branches);
 	Task<int> stressTest(int iterations);
+	Task<int> fib(int n);
 
 };
 

@@ -38,16 +38,16 @@ WorkStealPool::WorkStealPool(int num_threads){
 			
 				if(queues.at(random_index).try_steal(task)){
 					task();
-					backoff.reset();
+					//backoff.reset();
 					break;
 				}
 			}
 			
-			if(worker_id == 0){
-				continue;
-			}
+			//if(worker_id == 0){
+			//	continue;
+			//}
 
-			backoff.backoff();
+			//backoff.backoff();
 
 		}
 
