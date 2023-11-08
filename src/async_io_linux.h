@@ -5,6 +5,7 @@
 #include <atomic>
 
 #include "liburing/liburing.h"
+#include "io_uring_callback.h"
 
 namespace networking {
 
@@ -17,7 +18,7 @@ struct AsyncIO {
 
 	~AsyncIO();
 
-	void submitNoop();
+	void submitNoop(IOUringData& data);
 };
 
 }

@@ -29,37 +29,41 @@ struct Task {
 
 	struct promise_type {
 		T value;
-		std::variant<std::monostate, std::coroutine_handle<>> waiting_handle;
+		std::coroutine_handle<> waiting_handle = std::noop_coroutine();
 
 		Task get_return_object() { 
 			return {std::coroutine_handle<promise_type>::from_promise(*this)}; 
 		}
 
-   	 	std::suspend_always initial_suspend() noexcept { return {}; }
+   	 	std::suspend_always initial_suspend() noexcept{
+			return {};
+		}
 
 		struct ResultAwaiter {
 			promise_type& promise;
 
-			bool await_ready() noexcept {return false;}
-
-			std::coroutine_handle<> await_suspend (std::coroutine_handle<> handle) noexcept {
-				return std::get<1>(promise.waiting_handle);
+			bool await_ready() noexcept{
+				return false;
 			}
 
-			void await_resume() noexcept {}
+			std::coroutine_handle<> await_suspend(std::coroutine_handle<> handle) noexcept{
+				return promise.waiting_handle;
+			}
+
+			void await_resume() noexcept{}
 		};
 
 			
-		ResultAwaiter yield_value(T yield_value){
+		ResultAwaiter yield_value(T yield_value) noexcept{
 			value = yield_value;
 			return ResultAwaiter{*this};	
 		}
 
-		void return_value(T return_value){
+		void return_value(T return_value) noexcept{
 			value = return_value;
 		}
 		
-		ResultAwaiter final_suspend() noexcept {
+		ResultAwaiter final_suspend() noexcept{
 			return ResultAwaiter{*this}; 
 		}
 
@@ -68,13 +72,17 @@ struct Task {
 	};
 
 	//Constructor
-	Task(std::coroutine_handle<promise_type> handle) :my_handle(handle){}
+	Task(std::coroutine_handle<promise_type> handle) noexcept 
+		:my_handle(handle)
+	{}
 
 	//Copy Constructor
 	Task(Task& t) = delete;
 
 	//Move Constructor
-	Task(Task&& rhs) : my_handle(rhs.my_handle) { 
+	Task(Task&& rhs) noexcept 
+		: my_handle(rhs.my_handle)
+	{ 
 		rhs.my_handle = nullptr; 
 	}
 
@@ -96,12 +104,12 @@ struct Task {
 
 	std::coroutine_handle<promise_type> my_handle;
 
-	bool done(){
+	bool done() noexcept{
 		return my_handle.done();
 	}
 	
 	//Awaiter
-	bool await_ready(){
+	bool await_ready() noexcept{
 		return my_handle.done();
 	}
 
@@ -110,7 +118,7 @@ struct Task {
 		return my_handle;
 	}
 
-	T await_resume(){
+	T await_resume() noexcept{
 		return my_handle.promise().value;
 	}
 

@@ -1,6 +1,6 @@
 #ifdef _WIN32
 
-#include "overlap_callback.h"
+#include "io_completion_data_wsa.h"
 #include "iocp.h"
 
 namespace networking {
@@ -18,12 +18,9 @@ IOCP::IOCP()
 		while(running){
 			GetQueuedCompletionStatus(iocp_handle, &bytes_transferred, &completion_key, &overlapped, INFINITE);
 			
-			if (completion_key == 999){
-				break;
-			}
-
-			auto* io_task = static_cast<OverlapWithCallback*>(overlapped);
-			io_task->callback();
+			auto* completion_data = static_cast<IOCompletionDataWSA*>(overlapped);
+			
+			completion_data->callback();
 		}		
 
 	};

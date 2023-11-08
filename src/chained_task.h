@@ -26,7 +26,7 @@ template<typename T, Scheduler S>
 struct ChainedTask {
 	struct promise_type {
 		T value;
-		std::variant<std::monostate, std::coroutine_handle<>> waiting_handle;
+		std::coroutine_handle<> waiting_handle = std::noop_coroutine();
 		S& scheduler;
 
 		template<template<typename>typename AWAITABLE>
@@ -47,19 +47,19 @@ struct ChainedTask {
 
 			void await_suspend (std::coroutine_handle<> handle) noexcept {
 
-				return promise.scheduler.schedule(std::get<1>(promise.waiting_handle));
-				//return std::get<1>(promise.waiting_handle);
+				return promise.scheduler.schedule(promise.waiting_handle);
+				//return promise.waiting_handle;
 			}
 
 			void await_resume() noexcept {}	
 		};
 
-		ResultAwaiter yield_value(T yield_value){
+		ResultAwaiter yield_value(T yield_value) noexcept{
 			value = yield_value;
 			return ResultAwaiter{*this};	
 		}
 
-		void return_value(T return_value){
+		void return_value(T return_value) noexcept{
 			value = return_value;
 			
 		}
@@ -73,7 +73,7 @@ struct ChainedTask {
 	};
 
 	//Constructor
-	ChainedTask(std::coroutine_handle<promise_type> handle) 
+	ChainedTask(std::coroutine_handle<promise_type> handle) noexcept 
 		:my_handle(handle){
 	} 
 
@@ -81,7 +81,9 @@ struct ChainedTask {
 	ChainedTask(ChainedTask& t) = delete;
 
 	//Move constructor
-	ChainedTask(ChainedTask&& rhs) : my_handle(rhs.my_handle){
+	ChainedTask(ChainedTask&& rhs) noexcept 
+		:my_handle(rhs.my_handle)
+	{
 		rhs.my_handle = nullptr;
 	}
 
@@ -107,7 +109,7 @@ struct ChainedTask {
 
 
 	//Awaiter
-	bool await_ready(){
+	bool await_ready() noexcept{
 		return my_handle.done();
 	}
 
@@ -118,7 +120,7 @@ struct ChainedTask {
 
 	}
 
-	T await_resume(){
+	T await_resume() noexcept{
 		return my_handle.promise().value;
 	}
 

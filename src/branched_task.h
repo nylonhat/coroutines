@@ -30,9 +30,7 @@ struct [[nodiscard]] BranchedTask {
 			bool await_ready() noexcept {return false;}
 
 			void await_suspend (std::coroutine_handle<> handle) noexcept {
-				
 				return promise.scheduler.schedule(handle);
-
 			}
 
 			void await_resume() noexcept {}	
@@ -49,10 +47,7 @@ struct [[nodiscard]] BranchedTask {
 			bool await_ready() noexcept {return false;}
 
 			void await_suspend (std::coroutine_handle<> handle) noexcept {
-				
-				//Set signal to stop any more coroutines from registering to wait on result
 				promise.flag.signal_and_notify(promise.scheduler);
-					
 			}
 
 			void await_resume() noexcept {}	
@@ -78,7 +73,7 @@ struct [[nodiscard]] BranchedTask {
 	};
 
 	//Constructor
-	BranchedTask(std::coroutine_handle<promise_type> handle) 
+	BranchedTask(std::coroutine_handle<promise_type> handle) noexcept 
 		:my_handle(handle)
 	{} 
 
@@ -86,7 +81,9 @@ struct [[nodiscard]] BranchedTask {
 	BranchedTask(BranchedTask& t) = delete;
 
 	//Move constructor
-	BranchedTask(BranchedTask&& rhs) : my_handle(rhs.my_handle) { 
+	BranchedTask(BranchedTask&& rhs) noexcept 
+		:my_handle(rhs.my_handle)
+	{ 
 		rhs.my_handle = nullptr;
 	}
 
@@ -114,7 +111,7 @@ struct [[nodiscard]] BranchedTask {
   		return my_handle.promise().flag.operator co_await();
 	}
 
-	bool done(){
+	bool done() noexcept{
 		return my_handle.promise().flag.is_signalled();
 	}
 

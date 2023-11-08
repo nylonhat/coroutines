@@ -1,5 +1,5 @@
-#ifndef IO_COMPLETION_DATA_WSA_H
-#define IO_COMPLETION_DATA_WSA_H
+#ifndef OVERLAP_CALLBACK_H
+#define OVERLAP_CALLBACK_H
 
 #include <winsock2.h>
 #include <functional>
@@ -13,8 +13,8 @@
  * is waiting for the IO operation to be completed.
  */
 
-struct IOCompletionDataWSA : WSAOVERLAPPED {
-	std::coroutine_handle<> waiting_handle = std::noop_coroutine();
+struct OverlapWithCallback : WSAOVERLAPPED {
+	std::coroutine_handle<> coroutine_handle = std::noop_coroutine();
 	bool callback_completed = false;
 
 	void callback(){
