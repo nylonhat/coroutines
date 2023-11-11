@@ -10,7 +10,7 @@
 #include "timer.h"
 
 DAGSystem::DAGSystem()
-	: threadpool(16)
+	: threadpool(4)
 {}
 
 BlockingTask<int> DAGSystem::entry(){
@@ -152,8 +152,11 @@ Task<int> DAGSystem::fib(int n){
 		co_return n;
 	}
 
-	auto branch = threadpool.branch(fib(n-2));
-	co_return co_await fib(n-1) + co_await branch;
+	//auto branch = threadpool.branch(fib(n-2));
+	//co_return co_await fib(n-1) + co_await branch;
+
+	auto branch = co_await threadpool.fork(fib(n-1));
+	co_return co_await fib(n-2) + co_await branch; 
 }
 
 
@@ -170,7 +173,7 @@ Task<int> DAGSystem::stressTest(int iterations){
 		//std::cout << "iternation: " << i << "\n";
 		//result += co_await threadpool.chain(multiply(i, 1));
 		//result += co_await multiply(i,1);
-		result = co_await fib(48);
+		result = co_await fib(40);
 	}
 
 	timer.stop();

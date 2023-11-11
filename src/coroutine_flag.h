@@ -1,6 +1,7 @@
 #ifndef CORO_FLAG_H
 #define CORO_FLAG_H
 
+#include <cassert>
 #include <atomic>
 #include <coroutine>
 #include <functional>
