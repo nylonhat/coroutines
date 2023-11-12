@@ -1,11 +1,11 @@
-#ifndef FORKED_TASK_H
-#define FORKED_TASK_H
+#ifndef BRANCH_H
+#define BRANCH_H
 
 #include "coroutine_flag.h"
 #include "scheduler.h"
 
 template<typename T, Scheduler S>
-struct [[nodiscard]] ForkedTask {
+struct [[nodiscard]] Branch {
 	struct promise_type {
 		T value{};
 		S& scheduler;
@@ -18,7 +18,7 @@ struct [[nodiscard]] ForkedTask {
 		{
 		}
 
-		ForkedTask get_return_object() { 
+		Branch get_return_object() { 
 			return {std::coroutine_handle<promise_type>::from_promise(*this)}; 
 		}
 
@@ -58,28 +58,28 @@ struct [[nodiscard]] ForkedTask {
 	};
 
 	//Constructor
-	ForkedTask(std::coroutine_handle<promise_type> handle) noexcept 
+	Branch(std::coroutine_handle<promise_type> handle) noexcept 
 		:my_handle(handle)
 	{} 
 
 	//Copy constructor
-	ForkedTask(ForkedTask& t) = delete;
+	Branch(Branch& t) = delete;
 
 	//Move constructor
-	ForkedTask(ForkedTask&& rhs) noexcept 
+	Branch(Branch&& rhs) noexcept 
 		:my_handle(rhs.my_handle)
 	{ 
 		rhs.my_handle = nullptr;
 	}
 
 	//Copy assignment
-	ForkedTask& operator=(const ForkedTask& t) = delete;
+	Branch& operator=(const Branch& t) = delete;
 	
 	//Move assignment
-	ForkedTask& operator=(ForkedTask&& rhs) = delete;
+	Branch& operator=(Branch&& rhs) = delete;
 
 	//Destructor
-	~ForkedTask(){
+	~Branch(){
 		if (my_handle){
 			assert(my_handle.promise().flag.is_signalled() == true);
 			my_handle.destroy(); 
@@ -104,24 +104,69 @@ struct [[nodiscard]] ForkedTask {
 
 //Branching Implementation
 template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-ForkedTask<T, S> create_fork_by_value_on(S& scheduler, AWAITABLE<T> awaitable){
+Branch<T, S> branch_by_value_on(S& scheduler, AWAITABLE<T> awaitable){
 	co_return co_await awaitable;
 };
 
 template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-ForkedTask<T, S> create_fork_by_reference_on(S& scheduler, AWAITABLE<T>& awaitable){
+Branch<T, S> branch_by_reference_on(S& scheduler, AWAITABLE<T>& awaitable){
 	co_return co_await awaitable;
 };
 
 template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-ForkedTask<T, S> create_fork_on(S& scheduler, AWAITABLE<T>&& awaitable){
-	return create_fork_by_value_on(scheduler, std::move(awaitable));
+Branch<T, S> create_branch_on(S& scheduler, AWAITABLE<T>&& awaitable){
+	return branch_by_value_on(scheduler, std::move(awaitable));
 };
 
 template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-ForkedTask<T, S> create_fork_on(S& scheduler, AWAITABLE<T>& awaitable){
-	return create_fork_by_reference_on(scheduler, awaitable);
+Branch<T, S> create_branch_on(S& scheduler, AWAITABLE<T>& awaitable){
+	return branch_by_reference_on(scheduler, awaitable);
 };
 
+
+
+template<typename T, Scheduler S, template<typename>typename A>
+struct [[nodiscard]] BranchAwaiter {
+	S& scheduler;
+	Branch<T, S> branch;
+
+	BranchAwaiter(S& scheduler, A<T>&& awaitable)
+		:scheduler{scheduler}
+		,branch{create_branch_on(scheduler, std::move(awaitable))}
+	{
+	}
+	
+	BranchAwaiter(S& scheduler, A<T>& awaitable)
+		:scheduler{scheduler}
+		,branch{create_branch_on(scheduler, awaitable)}
+	{
+	}
+
+	//Awaiter
+	bool await_ready() noexcept{
+		return false;
+	}
+
+	std::coroutine_handle<> await_suspend(std::coroutine_handle<> caller_handle) noexcept{
+		
+		if(scheduler.schedule(caller_handle) != caller_handle){	
+			return branch.my_handle;
+		}
+
+		branch.my_handle.resume();
+		return caller_handle;
+	}
+
+	auto await_resume() noexcept{
+		return std::move(branch);
+	}
+
+};
+
+//Forking Implementation
+template<Scheduler S, typename A>
+auto branch_on(S& scheduler, A&& awaitable){
+	return BranchAwaiter(scheduler, std::forward<A>(awaitable));
+};
 
 #endif

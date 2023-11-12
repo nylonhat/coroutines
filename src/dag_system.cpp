@@ -9,35 +9,27 @@
 #include "dag_system.h"
 #include "timer.h"
 
-DAGSystem::DAGSystem()
+DagSystem::DagSystem()
 	: threadpool(16)
 {}
 
-BlockingTask<int> DAGSystem::entry(){
-	//std::cout <<"entry\n";
+BlockingTask<int> DagSystem::entry(){
 	int iterations = 1;
 
-	auto simulation = stressTest(iterations);
-
-	auto result = co_await simulation;
+	auto result = co_await benchmark(iterations);
 
 	std::cout << "Result: " << result << "\n";
 	
 	co_return 0;
 } 
 
-int DAGSystem::multiply_func(int a, int b){
-	return a*b;
-}
-
-Task<int> DAGSystem::multiply(int a, int b){
+Task<int> DagSystem::multiply(int a, int b){
 	//std::cout << "multiply on thread: " << std::this_thread::get_id() << "\n";
 	//std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 	co_return a * b;
 }
 
-Task<int> DAGSystem::permutation (){
-	 
+Task<int> DagSystem::permutation (){
 	//std::cout << "perm on thread: " << std::this_thread::get_id() << "\n";
 	unsigned int count = 0;
 	std::array<int, 7> array {0, 1, 2, 3, 4, 5, 6};
@@ -48,119 +40,17 @@ Task<int> DAGSystem::permutation (){
 	co_return count;
 }
 
-Task<int> DAGSystem::integerGenerator(){
-	for (int i = 0; true; i++){
-		co_yield i;
-	}
-
-	//return i;
-}
-
-Task<int> DAGSystem::A(){
-	//std::this_thread::sleep_for(std::chrono::milliseconds(300));
-	//std::cout << "A finished\n";
-	co_return 1;
-}
-
-Task<int> DAGSystem::B(){
-	//std::this_thread::sleep_for(std::chrono::milliseconds(1000));
-	//std::cout << "B finished\n";
-	co_return 2;
-}
-
-Task<int> DAGSystem::C(){
-	//std::this_thread::sleep_for(std::chrono::milliseconds(5000));
-	//std::cout << "C finished\n";
-	co_return 3;
-}
-
-Task<int> DAGSystem::D(auto& b){
-	auto a = threadpool.branch(A());
-	//auto a = A();
-	
-	co_return co_await a + co_await b;
-}
-
-Task<int> DAGSystem::E(auto& b){
-	auto c = threadpool.branch(C());
-	//auto c = C();
-	co_return co_await b + co_await c;
-}
-
-Task<int> DAGSystem::F(){
-	std::this_thread::sleep_for(std::chrono::milliseconds(4000));
-	co_return 44;
-}
-
-Task<int> DAGSystem::dagTest(){
-	unsigned int result = 0;	
-
-	auto branchF = threadpool.branch(F());
-
-	auto branchB = threadpool.branch(B());
-
-	auto branchD = threadpool.branch(D(branchB));
-
-	auto branchE = threadpool.branch(E(branchB));
-	
-	result += co_await branchD;
-	result += co_await branchE;
-
-	co_await branchB;
-	co_await branchF;
-	
-	co_return result;
-}
-
-Task<int> DAGSystem::branchesTest(int num_branches){
-	unsigned int result = 0;
-	using Branch = std::variant<std::monostate, BranchedTask<int, WorkStealPool>>;
-	
-	std::array<Branch, 32> branches;
-	
-	for(auto& branch : branches){
-		branch.emplace<1> (threadpool.branch(permutation()));
-	}
-
-	for(auto& branch: branches){
-		result += co_await std::get<1>(branch);
-	}
-
-	co_return result;
-
-}
-
-Task<int> DAGSystem::branchesVectorTest(int num_branches){
-	unsigned int result = 0;	
-	std::vector<BranchedTask<int, WorkStealPool>> branches;
-	branches.reserve(num_branches); 	
-	
-	for(int i = 0; i < num_branches; i++){
-		branches.emplace_back(threadpool.branch(permutation()));
-	}
-
-	for(auto& branch: branches){
-		result += co_await branch;
-	}
-
-	co_return result;
-
-}
-
-Task<int> DAGSystem::fib(int n){
+Task<int> DagSystem::fib(int n){
 	if(n < 2){
 		co_return n;
 	}
 
-	//auto branch = threadpool.branch(fib(n-2));
-	//co_return co_await fib(n-1) + co_await branch;
-
-	auto branch = co_await threadpool.fork(fib(n-1));
+	auto branch = co_await threadpool.branch(fib(n-1));
 	co_return co_await fib(n-2) + co_await branch; 
 }
 
 
-Task<int> DAGSystem::stressTest(int iterations){
+Task<int> DagSystem::benchmark(int iterations){
 	
 	unsigned int result = 0;
 	
@@ -168,16 +58,11 @@ Task<int> DAGSystem::stressTest(int iterations){
 	timer.start();
 
 	for (int i=0; i< iterations; i++){
-		//result += co_await branchesTest(8);
-		//result += co_await threadpool.branch(multiply(i, 1));
-		//std::cout << "iternation: " << i << "\n";
-		//result += co_await threadpool.chain(multiply(i, 1));
-		//result += co_await multiply(i,1);
 		result = co_await fib(48);
 	}
 
 	timer.stop();
-	std::cout << timer.count()/iterations << "\n";
+	std::cout << timer.count()/iterations << " ns\n";
 	
 	co_return result;
 }

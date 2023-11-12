@@ -1,9 +1,7 @@
-#ifndef CHAINED_TASK_H
-#define CHAINED_TASK_H
+#ifndef CHAIN_H
+#define CHAIN_H
 
 #include <coroutine>
-#include <variant>
-
 #include "scheduler.h"
 
 /**
@@ -23,7 +21,7 @@
  */
 
 template<typename T, Scheduler S>
-struct ChainedTask {
+struct Chain {
 	struct promise_type {
 		T value;
 		std::coroutine_handle<> waiting_handle = std::noop_coroutine();
@@ -34,7 +32,7 @@ struct ChainedTask {
 			:scheduler{scheduler}{
 		}
 
-		ChainedTask get_return_object() { 
+		Chain get_return_object() { 
 			return {std::coroutine_handle<promise_type>::from_promise(*this)}; 
 		}
 
@@ -71,28 +69,28 @@ struct ChainedTask {
 	};
 
 	//Constructor
-	ChainedTask(std::coroutine_handle<promise_type> handle) noexcept 
+	Chain(std::coroutine_handle<promise_type> handle) noexcept 
 		:my_handle(handle){
 	} 
 
 	//Copy constructor
-	ChainedTask(ChainedTask& t) = delete;
+	Chain(Chain& t) = delete;
 
 	//Move constructor
-	ChainedTask(ChainedTask&& rhs) noexcept 
+	Chain(Chain&& rhs) noexcept 
 		:my_handle(rhs.my_handle)
 	{
 		rhs.my_handle = nullptr;
 	}
 
 	//Copy assignment
-	ChainedTask& operator=(const ChainedTask& t) = delete;
+	Chain& operator=(const Chain& t) = delete;
 	
 	//Move assignment
-	ChainedTask& operator=(ChainedTask&& rhs) = delete;
+	Chain& operator=(Chain&& rhs) = delete;
 
 	//Destructor
-	~ChainedTask(){
+	~Chain(){
 		if (my_handle){
 			my_handle.destroy();
 		}		
@@ -125,22 +123,22 @@ struct ChainedTask {
 
 //Chaining Implementation
 template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-ChainedTask<T, S> chain_by_value_on(S& scheduler, AWAITABLE<T> awaitable){
+Chain<T, S> chain_by_value_on(S& scheduler, AWAITABLE<T> awaitable){
 	co_return co_await awaitable;
 };
 
 template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-ChainedTask<T, S> chain_by_reference_on(S& scheduler, AWAITABLE<T>& awaitable){
+Chain<T, S> chain_by_reference_on(S& scheduler, AWAITABLE<T>& awaitable){
 	co_return co_await awaitable;
 };
 
 template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-ChainedTask<T, S> chain_on(S& scheduler, AWAITABLE<T>&& awaitable){
+Chain<T, S> chain_on(S& scheduler, AWAITABLE<T>&& awaitable){
 	return chain_by_value_on(scheduler, std::move(awaitable));
 };
 
 template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-ChainedTask<T, S> chain_on(S& scheduler, AWAITABLE<T>& awaitable){
+Chain<T, S> chain_on(S& scheduler, AWAITABLE<T>& awaitable){
 	return chain_by_reference_on(scheduler, awaitable);
 };
 

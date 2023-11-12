@@ -7,9 +7,9 @@
 #include <utility>
 #include <coroutine>
 
-#include "chained_task.h"
-#include "branched_task.h"
-#include "forked_awaiter.h"
+#include "chain.h"
+#include "branch.h"
+#include "spawn.h"
 #include "bounded_mpmc_queue.h"
 #include "bounded_workstealing_deque.h"
 /**
@@ -38,21 +38,19 @@ public:
 	std::coroutine_handle<> schedule(std::coroutine_handle<> task);
 	
 	
-	//Chaining Implementation
 	template<typename A>
 	auto chain(A&& awaitable){
 		return chain_on(*this, std::forward<A>(awaitable));
 	}
 
-	//Branching Implementation	
 	template<typename A>
 	auto branch(A&& awaitable){
 		return branch_on(*this, std::forward<A>(awaitable));
 	}
 
 	template<typename A>
-	auto fork(A&& awaitable){
-		return fork_on(*this, std::forward<A>(awaitable));
+	auto spawn(A&& awaitable){
+		return spawn_on(*this, std::forward<A>(awaitable));
 	}
 
 
