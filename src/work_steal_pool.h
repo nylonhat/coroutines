@@ -22,7 +22,7 @@ private:
 	thread_local static WorkStealPool* my_pool;
 
 	std::atomic<int> worker_id_ticket = 0;
-	std::array< bounded_workstealing_deque<std::coroutine_handle<>,8>, 16> queues{};
+	std::array< bounded_workstealing_deque<std::coroutine_handle<>,64>, 16> queues{};
 	bounded_mpmc_queue<std::coroutine_handle<>, 8> master_queue{};
 
 public:

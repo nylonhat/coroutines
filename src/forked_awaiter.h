@@ -2,22 +2,22 @@
 #define FORKED_AWAITER_H
 
 #include "scheduler.h"
-#include "branched_task.h"
+#include "forked_task.h"
 
 template<typename T, Scheduler S, template<typename>typename A>
 struct [[nodiscard]] ForkedAwaiter {
 	S& scheduler;
-	BranchedTask<T, S> branched_task;
+	ForkedTask<T, S> forked_task;
 
 	ForkedAwaiter(S& scheduler, A<T>&& awaitable)
 		:scheduler{scheduler}
-		,branched_task{branch_on(scheduler, std::move(awaitable))}
+		,forked_task{create_fork_on(scheduler, std::move(awaitable))}
 	{
 	}
 	
 	ForkedAwaiter(S& scheduler, A<T>& awaitable)
 		:scheduler{scheduler}
-		,branched_task{branch_on(scheduler, awaitable)}
+		,forked_task{branch_on(scheduler, awaitable)}
 	{
 	}
 
@@ -26,13 +26,13 @@ struct [[nodiscard]] ForkedAwaiter {
 		return false;
 	}
 
-	void await_suspend(std::coroutine_handle<> caller_handle) noexcept{
+	std::coroutine_handle<> await_suspend(std::coroutine_handle<> caller_handle) noexcept{
 		scheduler.schedule(caller_handle);
-		//return branched_task.my_handle;
+		return forked_task.my_handle;
 	}
 
 	auto await_resume() noexcept{
-		return std::move(branched_task);
+		return std::move(forked_task);
 	}
 
 };

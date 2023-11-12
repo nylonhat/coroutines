@@ -1,6 +1,7 @@
 #include "backoff.h"
 #include "work_steal_pool.h"
 #include <random>
+#include <iostream>
 
 thread_local int WorkStealPool::worker_id = 0;
 thread_local WorkStealPool* WorkStealPool::my_pool = nullptr;

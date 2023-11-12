@@ -10,7 +10,7 @@
 #include "timer.h"
 
 DAGSystem::DAGSystem()
-	: threadpool(4)
+	: threadpool(16)
 {}
 
 BlockingTask<int> DAGSystem::entry(){
@@ -173,7 +173,7 @@ Task<int> DAGSystem::stressTest(int iterations){
 		//std::cout << "iternation: " << i << "\n";
 		//result += co_await threadpool.chain(multiply(i, 1));
 		//result += co_await multiply(i,1);
-		result = co_await fib(40);
+		result = co_await fib(48);
 	}
 
 	timer.stop();
