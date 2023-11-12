@@ -45,10 +45,8 @@ struct ChainedTask {
 
 			bool await_ready() noexcept {return false;}
 
-			void await_suspend (std::coroutine_handle<> handle) noexcept {
-
+			std::coroutine_handle<> await_suspend (std::coroutine_handle<> handle) noexcept {
 				return promise.scheduler.schedule(promise.waiting_handle);
-				//return promise.waiting_handle;
 			}
 
 			void await_resume() noexcept {}	
@@ -113,11 +111,9 @@ struct ChainedTask {
 		return my_handle.done();
 	}
 
-	void await_suspend(std::coroutine_handle<> caller_handle) noexcept{
+	std::coroutine_handle<> await_suspend(std::coroutine_handle<> caller_handle) noexcept{
 		my_handle.promise().waiting_handle = caller_handle;
-		
 		return my_handle.promise().scheduler.schedule(my_handle);
-
 	}
 
 	T await_resume() noexcept{

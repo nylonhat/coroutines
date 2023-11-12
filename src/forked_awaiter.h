@@ -27,8 +27,13 @@ struct [[nodiscard]] ForkedAwaiter {
 	}
 
 	std::coroutine_handle<> await_suspend(std::coroutine_handle<> caller_handle) noexcept{
-		scheduler.schedule(caller_handle);
-		return forked_task.my_handle;
+		
+		if(scheduler.schedule(caller_handle) != caller_handle){	
+			return forked_task.my_handle;
+		}
+
+		forked_task.my_handle.resume();
+		return caller_handle;
 	}
 
 	auto await_resume() noexcept{

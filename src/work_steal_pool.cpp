@@ -64,23 +64,14 @@ WorkStealPool::~WorkStealPool(){
 	running.store(false);
 }
 
-void WorkStealPool::schedule(std::coroutine_handle<> task){
+std::coroutine_handle<> WorkStealPool::schedule(std::coroutine_handle<> task){
+	//thread does not belong to this pool
 	if(my_pool != this){
-		if(master_queue.try_enqueue(task)){
-			return;
-		}
-		return task();
+		return master_queue.try_enqueue(task) ? std::noop_coroutine() : task;
 	}
 
 	//enqueue task into threads own queue
-	//default to queue 0 if from outside thread
-	if(queues.at(worker_id).try_local_push(task)){
-		return;
-	}
-	
-	//Default to running task inline if can't schedule
-	//Tail call optimisation should work here
-	return task();
+	return queues.at(worker_id).try_local_push(task) ? std::noop_coroutine() : task;
 }
 
 

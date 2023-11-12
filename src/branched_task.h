@@ -27,7 +27,7 @@ struct [[nodiscard]] BranchedTask {
 
 			bool await_ready() noexcept {return false;}
 
-			void await_suspend (std::coroutine_handle<> handle) noexcept {
+			std::coroutine_handle<> await_suspend (std::coroutine_handle<> handle) noexcept {
 				return promise.scheduler.schedule(handle);
 			}
 

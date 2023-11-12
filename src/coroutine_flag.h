@@ -38,7 +38,7 @@ struct CoroFlag {
 			auto* temp_next_awaiter = current_awaiter->next_awaiter;
 			
 			//Provide a custom scheduling function
-			scheduler.schedule(current_awaiter->waiting_handle);
+			scheduler.schedule(current_awaiter->waiting_handle).resume();
 
 			current_awaiter = temp_next_awaiter;
 		}
