@@ -14,7 +14,7 @@ namespace udp {
 template<typename T = bool>
 struct SendingTask {
 	SOCKET socket_handle;
-	IOCompletionData completion_data{};
+	IOCompletionDataWSA completion_data{};
 	WSABUF data_buffer;
 
 	//constructor

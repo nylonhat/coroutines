@@ -7,7 +7,15 @@ GCC := g++ -fcoroutines
 
 CXX := $(CLANG) -std=c++20#-flto #-fsanitize=thread
 
-CXXFLAGS := -O3 -march=native -flto=auto -DNDEBUG#-Wall -g -O3#-march=native
+DEBUGFLAGS := -Wall -g -O3 -march=native
+RELEASEFLAGS := -O3 -march=native -DNDEBUG
+
+CXXFLAGS := $(RELEASEFLAGS)
+ifdef OS
+	
+else 
+	CXXFLAGS += -flto=auto
+endif
 
 SRCPATH := ./src
 BINPATH := ./bin
@@ -27,7 +35,7 @@ EXE := program.exe
 
 #SRCS := $(wildcard $(SRCPATH)/*.cpp) $(wildcard $(SRCPATH)/*/*.cpp) $(wildcard $(SRCPATH)/*/*/*.cpp) $(wildcard $(SRCPATH)/*/*/*/*.cpp) 
 ifdef OS
-	SRCS := $(shell powershell.exe Get-ChildItem -Recurse -Filter '*.cpp')
+	SRCS := $(wildcard $(SRCPATH)/*.cpp) $(wildcard $(SRCPATH)/*/*.cpp) $(wildcard $(SRCPATH)/*/*/*.cpp) $(wildcard $(SRCPATH)/*/*/*/*.cpp)
 else
 	SRCS := $(shell find $(SRCPATH) -name '*.cpp')
 endif
