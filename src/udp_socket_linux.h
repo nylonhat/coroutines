@@ -7,8 +7,7 @@
 //#include "sending_task_linux.h"
 //#include "recving_task_linux.h"
 
-namespace networking {
-namespace udp{
+namespace networking::udp {
 
 struct Socket{
 	const static int INVALID_SOCKET = -1;
@@ -48,7 +47,6 @@ struct Socket{
 };
 
 
-} //End UDP namespace
-} //End Networking namespace 
+}
 
 #endif 

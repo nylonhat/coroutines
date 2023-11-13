@@ -25,11 +25,18 @@ MAKEDEPSPATH := ./etc/make-deps
 
 EXE := program.exe
 
-SRCS := $(wildcard $(SRCPATH)/*.cpp)
-OBJS := $(patsubst $(SRCPATH)/%.cpp, $(OBJPATH)/%.o, $(SRCS))
+#SRCS := $(wildcard $(SRCPATH)/*.cpp) $(wildcard $(SRCPATH)/*/*.cpp) $(wildcard $(SRCPATH)/*/*/*.cpp) $(wildcard $(SRCPATH)/*/*/*/*.cpp) 
+ifdef OS
+	SRCS := $(shell powershell.exe Get-ChildItem -Recurse -Filter '*.cpp')
+else
+	SRCS := $(shell find $(SRCPATH) -name '*.cpp')
+endif
 
-DEPENDS := $(patsubst $(SRCPATH)/%.cpp, $(MAKEDEPSPATH)/%.d, $(SRCS))
+OBJS := $(SRCS:$(SRCPATH)/%.cpp=$(OBJPATH)/%.o)
+OBJDIR := $(sort $(dir $(OBJS)))
 
+DEPENDS := $(SRCS:$(SRCPATH)/%.cpp=$(MAKEDEPSPATH)/%.d)
+DEPENDSDIR := $(sort $(dir $(DEPENDS)))
 
 .PHONY: all run clean
 
@@ -40,15 +47,16 @@ $(EXE): $(OBJS)
 
 -include $(DEPENDS)
 
-$(OBJPATH)/%.o: $(SRCPATH)/%.cpp Makefile | $(OBJPATH) $(MAKEDEPSPATH)
+$(OBJPATH)/%.o: $(SRCPATH)/%.cpp Makefile | $(OBJDIR) $(DEPENDSDIR)
 	$(CXX) $(CXXFLAGS) -MMD -MP -MF $(MAKEDEPSPATH)/$*.d -I$(INCLUDEPATH) -c $< -o $@ 
 
-$(OBJPATH) $(MAKEDEPSPATH):
+$(OBJDIR) $(DEPENDSDIR):
 ifdef OS
 	powershell.exe [void](New-Item -ItemType Directory -Path ./ -Name $@)
 else
 	mkdir -p $@
 endif
+
 
 clean:
 ifdef OS

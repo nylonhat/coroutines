@@ -8,8 +8,7 @@
 
 #include "udp_socket_linux.h"
 
-namespace networking {
-namespace udp {
+namespace networking::udp{
 
 Socket::Socket(){
 
@@ -159,7 +158,6 @@ RecvingTask<bool> Socket::recv(char* recv_buffer, size_t recv_buffer_size){
 }
 */
 
-}
 }
 
 #endif
