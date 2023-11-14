@@ -10,11 +10,11 @@
 #include "timer.h"
 
 DagSystem::DagSystem()
-	: threadpool(16)
+	: threadpool(1)
 {}
 
 BlockingTask<int> DagSystem::entry(){
-	int iterations = 1;
+	int iterations = 100000000;
 
 	auto result = co_await benchmark(iterations);
 
@@ -58,7 +58,11 @@ Task<int> DagSystem::benchmark(int iterations){
 	timer.start();
 
 	for (int i=0; i< iterations; i++){
-		result = co_await fib(48);
+		//result = co_await fib(48);
+		//result += co_await multiply(i, 1);
+		//result += co_await threadpool.chain(multiply(i, 1));
+		result += co_await co_await threadpool.branch(multiply(i, 1));
+		//result += co_await threadpool.spawn(multiply(i, 1));
 	}
 
 	timer.stop();

@@ -6,7 +6,7 @@
 thread_local int WorkStealPool::worker_id = 0;
 thread_local WorkStealPool* WorkStealPool::my_pool = nullptr;
 
-WorkStealPool::WorkStealPool(int num_threads){
+WorkStealPool::WorkStealPool(int num_threads) {
 
 	//define worker loop
 	auto work = [this](){
@@ -39,7 +39,7 @@ WorkStealPool::WorkStealPool(int num_threads){
 			
 				if(queues.at(random_index).try_steal(task)){
 					task();
-					//backoff.reset();
+					backoff.reset();
 					break;
 				}
 			}
@@ -47,7 +47,7 @@ WorkStealPool::WorkStealPool(int num_threads){
 			//if(worker_id == 0){
 			//	continue;
 			//}
-
+			
 			//backoff.backoff();
 
 		}

@@ -9,14 +9,14 @@
 using namespace std::literals::chrono_literals;
 
 struct alignas(64) Backoff {
+	std::minstd_rand random_generator{std::random_device{}()};
 	const int min_backoff_count = 0;
 	const int max_backoff_count = 9;
 	
 	int backoff_count = 0;
 
-	std::minstd_rand random_generator{std::random_device{}()};
 
-	void backoff(){
+	void backoff() noexcept{
 		if (isMaxBackoff()){
 			std::this_thread::sleep_for(1ms);
 			return;
@@ -32,11 +32,11 @@ struct alignas(64) Backoff {
 		backoff_count = std::min(max_backoff_count, backoff_count + 1);
 	}
 
-	void reset(){
+	void reset() noexcept{
 		backoff_count = min_backoff_count;
 	}
 
-	void easein(){
+	void easein() noexcept{
 		if (isMinBackoff()){
 			return;
 		}
@@ -51,11 +51,11 @@ struct alignas(64) Backoff {
 		backoff_count = std::max(min_backoff_count, backoff_count - 1);
 	}
 
-	bool isMaxBackoff(){
+	bool isMaxBackoff() noexcept{
 		return backoff_count == max_backoff_count;
 	}
 	
-	bool isMinBackoff(){
+	bool isMinBackoff() noexcept{
 		return backoff_count == min_backoff_count;
 	}
 
