@@ -6,15 +6,17 @@
 #include <variant>
 #include <iostream>
 
+#include "branch.h"
 #include "dag_system.h"
 #include "timer.h"
+#include "branch_array.h"
 
 DagSystem::DagSystem()
-	: threadpool(1)
+	: threadpool(8)
 {}
 
 BlockingTask<int> DagSystem::entry(){
-	int iterations = 100000000;
+	int iterations = 1;
 
 	auto result = co_await benchmark(iterations);
 
@@ -49,6 +51,32 @@ Task<int> DagSystem::fib(int n){
 	co_return co_await fib(n-2) + co_await branch; 
 }
 
+Task<int> DagSystem::arrayTest(){
+	using Branch = std::variant<std::monostate, Branch<int, WorkStealPool>>;
+	
+	int result = 0;
+	size_t limit = 0;
+	std::array<Branch, 8> branches{};
+	
+	size_t index = 0;
+	while(limit < 1'000'000){
+		auto last_slot = emplace_in(branches, co_await threadpool.branch(permutation()), index);	
+		if(last_slot.index() == 1){
+			result += co_await std::get<1>(last_slot);
+		}
+		limit++;
+	}
+
+	for(auto& branch : branches){
+		if(branch.index() == 1){
+			result += co_await std::get<1>(branch);
+		}
+	}
+
+
+	co_return result;
+
+}
 
 Task<int> DagSystem::benchmark(int iterations){
 	
@@ -61,8 +89,9 @@ Task<int> DagSystem::benchmark(int iterations){
 		//result = co_await fib(48);
 		//result += co_await multiply(i, 1);
 		//result += co_await threadpool.chain(multiply(i, 1));
-		result += co_await co_await threadpool.branch(multiply(i, 1));
+		//result += co_await co_await threadpool.branch(multiply(i, 1));
 		//result += co_await threadpool.spawn(multiply(i, 1));
+		result += co_await arrayTest();
 	}
 
 	timer.stop();

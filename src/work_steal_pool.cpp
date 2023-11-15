@@ -44,11 +44,11 @@ WorkStealPool::WorkStealPool(int num_threads) {
 				}
 			}
 			
-			//if(worker_id == 0){
-			//	continue;
-			//}
+			if(worker_id == 0){
+				continue;
+			}
 			
-			//backoff.backoff();
+			backoff.backoff();
 
 		}
 

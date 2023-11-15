@@ -18,9 +18,10 @@ struct DagSystem {
 	BlockingTask<int> entry();
 
 	Task<int> multiply(int a, int b);
-	Task<int> permutation ();
+	Task<int> permutation();
 	Task<int> benchmark(int iterations);
 	Task<int> fib(int n);
+	Task<int> arrayTest();
 
 };
 
