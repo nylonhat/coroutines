@@ -10,7 +10,7 @@ CXX := $(CLANG) -std=c++20
 DEBUGFLAGS := -Wall -g -O3 -march=native -fsanitize=thread
 RELEASEFLAGS := -O3 -march=native -DNDEBUG -fno-exceptions
 
-CXXFLAGS := $(DEBUGFLAGS)
+CXXFLAGS := $(RELEASEFLAGS)
 ifdef OS
 	
 else 

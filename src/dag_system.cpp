@@ -76,7 +76,7 @@ Task<int> DagSystem::arrayTest(){
 	std::array<Branch, 8> branches{};
 	
 	size_t index = 0;
-	while(limit < 1'000){
+	while(limit < 1'00'000'000){
 		auto last_slot = emplace_in(branches, co_await threadpool.branch(multiply(1,1)), index);	
 		if(last_slot.index() == 1){
 			//std::cout << "b: " << &last_slot << " c: " << std::get<1>(last_slot).my_handle.address() << "\n";
@@ -97,6 +97,28 @@ Task<int> DagSystem::arrayTest(){
 
 }
 
+Task<int> DagSystem::manyBranch(){
+	int result = 0;
+	auto b1 = co_await threadpool.branch(multiply(1,1));
+	auto b2 = co_await threadpool.branch(multiply(1,1));
+	auto b3 = co_await threadpool.branch(multiply(1,1));
+	auto b4 = co_await threadpool.branch(multiply(1,1));
+	auto b5 = co_await threadpool.branch(multiply(1,1));
+	auto b6 = co_await threadpool.branch(multiply(1,1));
+	auto b7 = co_await threadpool.branch(multiply(1,1));
+
+	result += co_await b1;
+	result += co_await b2;
+	result += co_await b3;
+	result += co_await b4;
+	result += co_await b5;
+	result += co_await b6;
+	result += co_await b7;
+
+	co_return result;
+	
+}
+
 Task<int> DagSystem::benchmark(int iterations){
 	
 	unsigned int result = 0;
@@ -105,13 +127,14 @@ Task<int> DagSystem::benchmark(int iterations){
 	timer.start();
 
 	for (int i=0; i< iterations; i++){
-		//result = co_await fib(48);
+		//result = co_await fib(33);
 		//result += co_await multiply(i, 1);
 		//result += co_await threadpool.chain(multiply(i, 1));
 		//result += co_await co_await threadpool.branch(multiply(i, 1));
 		//result += co_await threadpool.spawn(multiply(i, 1));
-		//result += co_await arrayTest();
-		result = co_await vectorTest(2);
+		result += co_await arrayTest();
+		//result = co_await vectorTest(2);
+		//result += co_await manyBranch();
 	}
 
 	timer.stop();

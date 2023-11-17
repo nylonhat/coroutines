@@ -148,12 +148,12 @@ struct [[nodiscard]] BranchAwaiter {
 	}
 
 	std::coroutine_handle<> await_suspend(std::coroutine_handle<> caller_handle) noexcept{
-		
+		auto branch_handle = branch.my_handle;
 		if(scheduler.schedule(caller_handle) != caller_handle){	
-			return branch.my_handle;
+			return branch_handle;
 		}
 
-		branch.my_handle.resume();
+		branch_handle.resume();
 		return caller_handle;
 	}
 

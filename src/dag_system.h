@@ -23,6 +23,7 @@ struct DagSystem {
 	Task<int> fib(int n);
 	Task<int> vectorTest(size_t);
 	Task<int> arrayTest();
+	Task<int> manyBranch();
 
 };
 
