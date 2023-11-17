@@ -9,7 +9,8 @@
 template<typename T, Scheduler S, size_t SIZE>
 std::variant<std::monostate, Branch<T, S>> emplace_in(std::array<std::variant<std::monostate, Branch<T,S>>, SIZE>& branches, Branch<T,S>&& branch, size_t& index){
 	for(;;){
-		std::variant<std::monostate, Branch<T, S>>& slot = branches.at(index%SIZE); 	
+		std::variant<std::monostate, Branch<T, S>>& slot = branches.at(index%SIZE); 
+		index++;
 		if(slot.index() == 0){
 			slot.template emplace<1>(std::move(branch));
 			return std::monostate();
@@ -23,7 +24,6 @@ std::variant<std::monostate, Branch<T, S>> emplace_in(std::array<std::variant<st
 			return std::move(done_branch);
 		}
 
-		index++;
 	}
 }	
 

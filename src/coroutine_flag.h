@@ -28,7 +28,7 @@ struct CoroFlag {
 	void signal_and_notify(S& scheduler) noexcept{
 		//Signal set by exchanging the head of list with 'set' state
 		auto* current_awaiter = static_cast<Awaiter*>(
-			head_of_awaiter_list.exchange(static_cast<void*>(this), std::memory_order_release) 
+			head_of_awaiter_list.exchange(static_cast<void*>(this), std::memory_order_acq_rel) 
 		);
 		
 		//Notify by walking through linked list

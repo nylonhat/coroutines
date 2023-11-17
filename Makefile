@@ -5,12 +5,12 @@ endif
 
 GCC := g++ -fcoroutines
 
-CXX := $(CLANG) -std=c++20#-flto #-fsanitize=thread
+CXX := $(CLANG) -std=c++20
 
-DEBUGFLAGS := -Wall -g -O3 -march=native
-RELEASEFLAGS := -O3 -march=native -DNDEBUG
+DEBUGFLAGS := -Wall -g -O3 -march=native -fsanitize=thread
+RELEASEFLAGS := -O3 -march=native -DNDEBUG -fno-exceptions
 
-CXXFLAGS := $(RELEASEFLAGS)
+CXXFLAGS := $(DEBUGFLAGS)
 ifdef OS
 	
 else 

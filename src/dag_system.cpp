@@ -16,7 +16,7 @@ DagSystem::DagSystem()
 {}
 
 BlockingTask<int> DagSystem::entry(){
-	int iterations = 1;
+	size_t iterations = 1;
 
 	auto result = co_await benchmark(iterations);
 
@@ -51,6 +51,23 @@ Task<int> DagSystem::fib(int n){
 	co_return co_await fib(n-2) + co_await branch; 
 }
 
+Task<int> DagSystem::vectorTest(size_t size){
+	size_t result = 0;
+
+	std::vector<Branch<int,WorkStealPool>> branches{};
+	branches.reserve(size);
+
+	for(size_t i = 0; i<size; i++){
+		branches.emplace_back(co_await threadpool.branch(multiply(1, 1)));
+	}
+
+	for(auto& branch: branches){
+		result += co_await branch;
+	}
+
+	co_return result;
+}
+
 Task<int> DagSystem::arrayTest(){
 	using Branch = std::variant<std::monostate, Branch<int, WorkStealPool>>;
 	
@@ -59,9 +76,10 @@ Task<int> DagSystem::arrayTest(){
 	std::array<Branch, 8> branches{};
 	
 	size_t index = 0;
-	while(limit < 1'000'000){
-		auto last_slot = emplace_in(branches, co_await threadpool.branch(permutation()), index);	
+	while(limit < 1'000){
+		auto last_slot = emplace_in(branches, co_await threadpool.branch(multiply(1,1)), index);	
 		if(last_slot.index() == 1){
+			//std::cout << "b: " << &last_slot << " c: " << std::get<1>(last_slot).my_handle.address() << "\n";
 			result += co_await std::get<1>(last_slot);
 		}
 		limit++;
@@ -69,6 +87,7 @@ Task<int> DagSystem::arrayTest(){
 
 	for(auto& branch : branches){
 		if(branch.index() == 1){
+			//std::cout << "b: " << &branch << " c: " << std::get<1>(branch).my_handle.address() << "\n";
 			result += co_await std::get<1>(branch);
 		}
 	}
@@ -91,7 +110,8 @@ Task<int> DagSystem::benchmark(int iterations){
 		//result += co_await threadpool.chain(multiply(i, 1));
 		//result += co_await co_await threadpool.branch(multiply(i, 1));
 		//result += co_await threadpool.spawn(multiply(i, 1));
-		result += co_await arrayTest();
+		//result += co_await arrayTest();
+		result = co_await vectorTest(2);
 	}
 
 	timer.stop();

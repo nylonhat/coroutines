@@ -21,6 +21,7 @@ struct DagSystem {
 	Task<int> permutation();
 	Task<int> benchmark(int iterations);
 	Task<int> fib(int n);
+	Task<int> vectorTest(size_t);
 	Task<int> arrayTest();
 
 };
