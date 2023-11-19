@@ -3,6 +3,7 @@
 
 #include "coroutine_flag.h"
 #include "scheduler.h"
+#include <iostream>
 
 template<typename T, Scheduler S>
 struct [[nodiscard]] Branch {
@@ -139,8 +140,7 @@ struct [[nodiscard]] BranchAwaiter {
 	BranchAwaiter(S& scheduler, A<T>& awaitable)
 		:scheduler{scheduler}
 		,branch{create_branch_on(scheduler, awaitable)}
-	{
-	}
+	{}
 
 	//Awaiter
 	bool await_ready() noexcept{
@@ -148,16 +148,16 @@ struct [[nodiscard]] BranchAwaiter {
 	}
 
 	std::coroutine_handle<> await_suspend(std::coroutine_handle<> caller_handle) noexcept{
-		auto branch_handle = branch.my_handle;
-		if(scheduler.schedule(caller_handle) != caller_handle){	
-			return branch_handle;
+		std::coroutine_handle<> branch_handle_copy = branch.my_handle;
+		if(scheduler.schedule(caller_handle) != caller_handle){
+			return branch_handle_copy;
 		}
 
-		branch_handle.resume();
+		branch_handle_copy.resume();
 		return caller_handle;
 	}
 
-	auto await_resume() noexcept{
+	Branch<T,S> await_resume() noexcept{
 		return std::move(branch);
 	}
 

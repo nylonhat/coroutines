@@ -7,15 +7,16 @@ GCC := g++ -fcoroutines
 
 CXX := $(CLANG) -std=c++20
 
-DEBUGFLAGS := -Wall -g -O3 -march=native -fsanitize=thread
-RELEASEFLAGS := -O3 -march=native -DNDEBUG -fno-exceptions
+DEBUG := -Wall -g -O3 -fsanitize=thread
+RELEASE := -O3 -march=native -DNDEBUG -fno-exceptions
 
-CXXFLAGS := $(RELEASEFLAGS)
 ifdef OS
 	
 else 
-	CXXFLAGS += -flto=auto
+	RELEASE += -flto=auto
 endif
+
+CXXFLAGS := $(DEBUG)
 
 SRCPATH := ./src
 BINPATH := ./bin

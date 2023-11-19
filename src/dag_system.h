@@ -24,7 +24,8 @@ struct DagSystem {
 	Task<int> vectorTest(size_t);
 	Task<int> arrayTest();
 	Task<int> manyBranch();
-
+	Task<int> normalArrayTest();
+	Task<int> variantArrayTest();
 };
 
 #endif
