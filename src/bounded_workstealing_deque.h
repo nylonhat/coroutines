@@ -138,7 +138,7 @@ private:
 	//Member variables
 	cell_t buffer[buffer_size];
 	size_t const buffer_mask;
-	size_t stack_position = 0;
+	alignas(64) size_t stack_position = 0;
 	alignas(64) std::atomic<size_t> steal_position = 0;
 
 	//Copy constructor
