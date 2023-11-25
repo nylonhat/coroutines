@@ -14,7 +14,7 @@ public:
 
 		static_assert(buffer_size >= 2);
 		static_assert((buffer_size & (buffer_size - 1)) == 0);
-		static_assert(buffer_size < std::numerics_limit<size_t>::max()/2)
+		static_assert(buffer_size < std::numeric_limits<size_t>::max()/2);
 
 		for(size_t i = 0; i < buffer_size; i++){
 			buffer[i].sequence.store(i, std::memory_order_relaxed);
