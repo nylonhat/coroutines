@@ -69,18 +69,18 @@ Task<int> DagSystem::vectorTest(size_t size){
 }
 
 Task<int> DagSystem::arrayTest(){
-	using Branch = std::variant<std::monostate, Branch<int, WorkStealPool>>;
+	using Spawn = std::variant<std::monostate, Branch<int, WorkStealPool>>;
 	
 	int result = 0;
 	size_t limit = 0;
-	std::array<Branch, 8> branches{};
+	std::array<Spawn, 8> branches{};
+	Recycler recycler{branches};
 	
-	size_t index = 0;
-	while(limit < 1'00'000'000){
-		auto last_slot = emplace_in(branches, co_await threadpool.branch(multiply(1,1)), index);	
-		if(last_slot.index() == 1){
+	while(limit < 1'000'000){
+		auto recycled_slot = recycler.emplace(co_await threadpool.branch(permutation()));	
+		if(recycled_slot.index() == 1){
 			//std::cout << "b: " << &last_slot << " c: " << std::get<1>(last_slot).my_handle.address() << "\n";
-			result += co_await std::get<1>(last_slot);
+			result += co_await std::get<1>(recycled_slot);
 		}
 		limit++;
 	}
@@ -173,8 +173,8 @@ Task<int> DagSystem::benchmark(int iterations){
 		//result += co_await threadpool.chain(multiply(i, 1));
 		//result += co_await co_await threadpool.branch(multiply(i, 1));
 		//result += co_await threadpool.spawn(multiply(i, 1));
-		//result += co_await arrayTest();
-		result = co_await vectorTest(2);
+		result += co_await arrayTest();
+		//result = co_await vectorTest(2);
 		//result += co_await manyBranch();
 		//result += co_await normalArrayTest();
 		//result += co_await variantArrayTest();
