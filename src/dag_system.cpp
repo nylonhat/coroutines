@@ -9,7 +9,7 @@
 #include "branch.h"
 #include "dag_system.h"
 #include "timer.h"
-#include "branch_array.h"
+#include "recycler.h"
 
 DagSystem::DagSystem()
 	: threadpool(8)
@@ -68,7 +68,7 @@ Task<int> DagSystem::vectorTest(size_t size){
 	co_return result;
 }
 
-Task<int> DagSystem::arrayTest(){
+Task<int> DagSystem::recyclerTest(){
 	using Spawn = std::variant<std::monostate, Branch<int, WorkStealPool>>;
 	
 	int result = 0;
@@ -76,8 +76,8 @@ Task<int> DagSystem::arrayTest(){
 	std::array<Spawn, 8> branches{};
 	Recycler recycler{branches};
 	
-	while(limit < 1'000'000){
-		auto recycled_slot = recycler.emplace(co_await threadpool.branch(permutation()));	
+	while(limit < 1'000){
+		auto recycled_slot = recycler.emplace(co_await threadpool.branch(multiply(1,1)));	
 		if(recycled_slot.index() == 1){
 			//std::cout << "b: " << &last_slot << " c: " << std::get<1>(last_slot).my_handle.address() << "\n";
 			result += co_await std::get<1>(recycled_slot);
@@ -143,13 +143,15 @@ Task<int> DagSystem::normalArrayTest(){
 
 Task<int> DagSystem::variantArrayTest(){
 	using BranchV = std::variant<std::monostate, Branch<int, WorkStealPool>>;
-	int result =0;
+	int result = 0;
 
 	std::array<BranchV, 2> branches{};
 
 	for(auto& branchv : branches){
 		branchv.emplace<1>( co_await threadpool.branch(multiply(1,1)) );
 	}
+
+	
 
 	for(auto& branchv : branches){
 		result += co_await std::get<1>(branchv);
@@ -173,7 +175,7 @@ Task<int> DagSystem::benchmark(int iterations){
 		//result += co_await threadpool.chain(multiply(i, 1));
 		//result += co_await co_await threadpool.branch(multiply(i, 1));
 		//result += co_await threadpool.spawn(multiply(i, 1));
-		result += co_await arrayTest();
+		result += co_await recyclerTest();
 		//result = co_await vectorTest(2);
 		//result += co_await manyBranch();
 		//result += co_await normalArrayTest();

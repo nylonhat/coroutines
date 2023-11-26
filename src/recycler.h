@@ -1,10 +1,9 @@
-#ifndef BRANCH_ARRAY_H
-#define BRANCH_ARRAY_H
+#ifndef RECYCLER_H
+#define RECYCLER_H
 
 #include "scheduler.h"
-#include "branch.h"
-
-
+#include <array>
+#include <variant>
 
 template<typename B, size_t SIZE>
 struct Recycler {

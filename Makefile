@@ -16,7 +16,7 @@ else
 	RELEASE += -flto=auto
 endif
 
-CXXFLAGS := $(RELEASE)
+CXXFLAGS := $(DEBUG)
 
 SRCPATH := ./src
 BINPATH := ./bin
