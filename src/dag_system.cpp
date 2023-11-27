@@ -76,7 +76,7 @@ Task<int> DagSystem::recyclerTest(){
 	std::array<Spawn, 8> branches{};
 	Recycler recycler{branches};
 	
-	while(limit < 1'000){
+	while(limit < 100'000'000){
 		auto recycled_slot = recycler.emplace(co_await threadpool.branch(multiply(1,1)));	
 		if(recycled_slot.index() == 1){
 			//std::cout << "b: " << &last_slot << " c: " << std::get<1>(last_slot).my_handle.address() << "\n";

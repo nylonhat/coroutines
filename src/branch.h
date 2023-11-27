@@ -136,10 +136,7 @@ struct [[nodiscard]] BranchAwaiter {
 	BranchAwaiter(S& scheduler, A<T>&& awaitable)
 		:scheduler{scheduler}
 		,branch{create_branch_on(scheduler, std::move(awaitable))}
-	{
-		//BUG!! clang has data race; gcc no data race
-		//std::this_thread::sleep_for(std::chrono::milliseconds(1));
-	}
+	{}
 	
 	BranchAwaiter(S& scheduler, A<T>& awaitable)
 		:scheduler{scheduler}
@@ -151,6 +148,8 @@ struct [[nodiscard]] BranchAwaiter {
 		return false;
 	}
 
+	//noinline attribute to resolve bug in older clang versions. Bug fixed in 17.0.X
+	__attribute__((noinline))
 	std::coroutine_handle<> await_suspend(std::coroutine_handle<> caller_handle) noexcept{
 		std::coroutine_handle<> branch_handle_copy = branch.my_handle;
 		if(scheduler.schedule(caller_handle) != caller_handle){
