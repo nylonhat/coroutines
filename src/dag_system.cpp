@@ -12,7 +12,7 @@
 #include "recycler.h"
 
 DagSystem::DagSystem()
-	: threadpool(16)
+	: threadpool(1)
 {}
 
 BlockingTask<int> DagSystem::entry(){
@@ -25,20 +25,21 @@ BlockingTask<int> DagSystem::entry(){
 	co_return 0;
 }
 
-Task<int> DagSystem::benchmark(int iterations){
+Task<size_t> DagSystem::benchmark(int iterations){
 	
-	unsigned int result = 0;
+	size_t result = 0;
 	
 	Timer timer;
 	timer.start();
 
 	for (int i=0; i< iterations; i++){
-		//result = co_await fib(48);
+		//result = fib_f(47);
+		result = co_await fib(47);
 		//result += co_await multiply(i, 1);
 		//result += co_await threadpool.chain(multiply(i, 1));
 		//result += co_await co_await threadpool.branch(multiply(i, 1));
 		//result += co_await threadpool.spawn(multiply(i, 1));
-		result += co_await recyclerTest(1'000'000'000);
+		//result += co_await recyclerTest(1'000'000);
 		//result = co_await vectorTest(1'000'000);
 	}
 
@@ -66,9 +67,16 @@ Task<int> DagSystem::permutation(){
 	co_return count;
 }
 
-Task<int> DagSystem::fib(int n){
+size_t DagSystem::fib_f(int n){
 	if(n < 2){
-		co_return n;
+		return n;
+	}
+	return fib_f(n-2) + fib_f(n-1);
+}
+
+Task<size_t> DagSystem::fib(int n){
+	if(n < 25){
+		co_return fib_f(n);
 	}
 
 	auto branch = co_await threadpool.branch(fib(n-1));
@@ -98,7 +106,7 @@ Task<int> DagSystem::recyclerTest(size_t limit){
 	int result = 0;
 	size_t count = 0;
 
-	std::array<Branch, 8> branches{};
+	std::array<Branch, 1000> branches{};
 	Recycler recycler{branches};
 	
 	while(count < limit){
