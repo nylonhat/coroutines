@@ -15,7 +15,7 @@ DagSystem::DagSystem()
 	: threadpool(16)
 {}
 
-BlockingTask<int> DagSystem::entry(){
+Sync<int> DagSystem::entry(){
 	size_t iterations = 10000000;
 
 	auto result = co_await benchmark(iterations);
@@ -35,13 +35,13 @@ Task<size_t> DagSystem::benchmark(int iterations){
 	for (size_t i=0; i< iterations; i++){
 		//result = fib_f(50);
 		//result = co_await fib(50);
-		//result += co_await multiply(i, 1);
-		//auto m = multiply(i, 1);
-		//result += co_await threadpool.chain(m);
-		result += co_await co_await threadpool.branch(multiply(i, 1));
-		//result += co_await threadpool.spawn(multiply(i, 1));
+		//result += co_await multiply(i,1);
+		//result += co_await threadpool.chain(multiply(i,1));
+		//result += co_await co_await threadpool.branch(multiply(i,1));
+		//result += co_await threadpool.spawn(multiply(i,1));
 		//result += co_await recyclerTest(1'000'000);
 		//result = co_await vectorTest(1'000'000);
+		result += sync_run(multiply(i,1));
 	}
 
 	timer.stop();
@@ -87,7 +87,7 @@ Task<size_t> DagSystem::fib(int n){
 Task<int> DagSystem::vectorTest(size_t size){
 	size_t result = 0;
 
-	std::vector<Branch<int,WorkStealPool>> branches{};
+	std::vector<Branch<int,Threadpool>> branches{};
 	branches.reserve(size);
 
 	for(size_t i = 0; i<size; i++){
@@ -102,7 +102,7 @@ Task<int> DagSystem::vectorTest(size_t size){
 }
 
 Task<int> DagSystem::recyclerTest(size_t limit){
-	using Branch = std::variant<std::monostate, Branch<int, WorkStealPool>>;
+	using Branch = std::variant<std::monostate, Branch<int, Threadpool>>;
 	
 	int result = 0;
 	size_t count = 0;

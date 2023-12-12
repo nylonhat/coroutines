@@ -1,14 +1,14 @@
-#ifndef BOUNDED_WORKSTEALING_DEQUE_H
-#define BOUNDED_WORKSTEALING_DEQUE_H
+#ifndef DEQUE_H
+#define DEQUE_H
 
 #include <limits>
 
 template<typename T, size_t buffer_size>
-class bounded_workstealing_deque{
+class Deque{
 
 public:
 	//constructor
-	bounded_workstealing_deque()
+	Deque()
 		: buffer_mask(buffer_size - 1)
 	{
 
@@ -23,7 +23,7 @@ public:
 	}
 	
 	//destructor
-	~bounded_workstealing_deque(){
+	~Deque(){
 	}
 
 	
@@ -32,7 +32,7 @@ public:
 		cell_t* cell = &buffer[stack_position & buffer_mask];
 		size_t seq = cell->sequence.load(std::memory_order_acquire);
 		
-		//Check if deque is full
+		//Check if Deque is full
 		if(seq != stack_position){
 			//Deque is full
 			return false;
@@ -40,7 +40,7 @@ public:
 
 		cell->data = data;
 
-		//Release info to other dequeuers that cell has new data
+		//Release info to other Dequeuers that cell has new data
 		cell->sequence.store(stack_position + 1, std::memory_order_release);
 		
 		stack_position++;
@@ -51,7 +51,7 @@ public:
 		//Check potential cell to pop off stack end
 		cell_t* cell = &buffer[(stack_position-1) & buffer_mask];
 
-		//Preemptively reverse the cell sequence if deque is not empty
+		//Preemptively reverse the cell sequence if Deque is not empty
 		//Will signal any lagging stealers that queue is empty now
 		size_t expected_seq = stack_position;
 		if(cell->sequence.compare_exchange_strong(expected_seq, stack_position-1, std::memory_order_acq_rel)){
@@ -59,7 +59,7 @@ public:
 			//Attempt to race with any potential stealers
 			size_t expected_steal = stack_position-1;
 			if(steal_position.compare_exchange_strong(expected_steal, stack_position, std::memory_order_relaxed)){
-				//Beat stealers, meaning we stole the last item from the deque
+				//Beat stealers, meaning we stole the last item from the Deque
 				data = cell->data;
 
 				//Modify cell sequence to be as if we stole like a stealer
@@ -67,7 +67,7 @@ public:
 				return true;
 			}
 			
-			//Check if we failed to get last item in deque
+			//Check if we failed to get last item in Deque
 			//Note: expected_steal is now loaded with value from previous CAS
 			if(expected_steal == stack_position){
 				//Lost race to stealer for the last item
@@ -76,7 +76,7 @@ public:
 			}
 
 			//Item was not the last item
-			//Free to take because lagging stealers think the deque is empty
+			//Free to take because lagging stealers think the Deque is empty
 			data = cell->data;
 			stack_position--;
 			return true;
@@ -100,7 +100,7 @@ public:
 			if(dif == 0){
 				//Race for the steal position
 				if(steal_position.compare_exchange_weak(pos, pos + 1, std::memory_order_relaxed)){
-					//Success: we are free to steal item from deque
+					//Success: we are free to steal item from Deque
 					break;
 				}
 				//We lost the race; try all over again
@@ -142,10 +142,10 @@ private:
 	alignas(64) std::atomic<size_t> steal_position = 0;
 
 	//Copy constructor
-	bounded_workstealing_deque(bounded_workstealing_deque const&) = delete;
+	Deque(Deque const&) = delete;
 	
 	//Copy assigment
-	void operator= (bounded_workstealing_deque const&) = delete;
+	void operator= (Deque const&) = delete;
 
 }; 
 

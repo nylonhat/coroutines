@@ -1,9 +1,9 @@
 #ifndef DAG_SYSTEM_H
 #define DAG_SYSTEM_H
 
-#include "work_steal_pool.h"
+#include "threadpool.h"
 #include "task.h"
-#include "blocking_task.h"
+#include "sync.h"
 
 template<typename B>
 concept Branchable = requires(B b){
@@ -11,11 +11,11 @@ concept Branchable = requires(B b){
 };
 
 struct DagSystem {
-	WorkStealPool threadpool;
+	Threadpool threadpool;
 
 	DagSystem();
 	
-	BlockingTask<int> entry();
+	Sync<int> entry();
 
 	Task<int> multiply(int a, int b);
 	Task<int> permutation();

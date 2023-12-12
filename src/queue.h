@@ -1,14 +1,14 @@
-#ifndef BOUNDED_MPMC_QUEUE_H
-#define BOUNDED_MPMC_QUEUE_H
+#ifndef QUEUE_H
+#define QUEUE_H
 
-//Modified from https://www.1024cores.net/home/lock-free-algorithms/queues/bounded-mpmc-queue
+//Modified from https://www.1024cores.net/home/lock-free-algorithms/Queues/bounded-mpmc-Queue
 
 template<typename T, size_t buffer_size>
-class alignas(64) bounded_mpmc_queue{
+class alignas(64) Queue{
 
 public:
 	//constructor
-	bounded_mpmc_queue()
+	Queue()
 		: buffer_mask_(buffer_size - 1)
 	{
 
@@ -24,7 +24,7 @@ public:
 	}
 	
 	//destructor
-	~bounded_mpmc_queue(){
+	~Queue(){
 	}
 
 
@@ -47,7 +47,7 @@ public:
 				//Retry all over
 			}
 			
-			//Fail if queue is full
+			//Fail if Queue is full
 			else if(dif < 0){
 				return false;
 			}
@@ -58,7 +58,7 @@ public:
 			}
 		}
 		
-		//Store data into the queue
+		//Store data into the Queue
 		cell->data_ = data;
 		cell->sequence_.store(pos + 1, std::memory_order_release);
 		return true;
@@ -74,7 +74,7 @@ public:
 			size_t seq = cell->sequence_.load(std::memory_order_acquire);
 			intptr_t dif = (intptr_t)seq - (intptr_t)(pos + 1);
 			
-			//We can potentially claim the front dequeue position
+			//We can potentially claim the front deQueue position
 			if(dif == 0){
 				//Try to claim position
 				if(dequeue_pos_.compare_exchange_weak(pos, pos + 1, std::memory_order_relaxed)){
@@ -84,7 +84,7 @@ public:
 				//Else try all over again
 			}
 			
-			//Fail if queue is empty
+			//Fail if Queue is empty
 			else if(dif < 0){
 				return false;
 			}
@@ -95,7 +95,7 @@ public:
 			}
 		}
 		
-		//Read data out from the queue
+		//Read data out from the Queue
 		data = cell->data_;
 		cell->sequence_.store(pos + buffer_mask_ + 1, std::memory_order_release);
 		return true;
@@ -124,10 +124,10 @@ private:
 	//cacheline_pad_t pad3_;
 
 	//Copy constructor
-	bounded_mpmc_queue(bounded_mpmc_queue const&);
+	Queue(Queue const&);
 	
 	//Copy assigment
-	void operator= (bounded_mpmc_queue const&);
+	void operator= (Queue const&);
 
 }; 
 

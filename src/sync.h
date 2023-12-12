@@ -1,5 +1,5 @@
-#ifndef BLOCKING_TASK_H
-#define BLOCKING_TASK_H
+#ifndef SYNC_H
+#define SYNC_H
 
 #include <variant>
 #include <atomic>
@@ -19,13 +19,13 @@
  */
 
 template<typename T>
-struct BlockingTask {
+struct Sync {
 
 	struct promise_type {
 		T value;
 		std::atomic_flag flag = ATOMIC_FLAG_INIT;
 
-		BlockingTask get_return_object() { 
+		Sync get_return_object() { 
 			return {std::coroutine_handle<promise_type>::from_promise(*this)}; 
 		}
 
@@ -64,26 +64,26 @@ struct BlockingTask {
 	};
 
 	//Constructor
-	BlockingTask(std::coroutine_handle<promise_type> handle) 
+	Sync(std::coroutine_handle<promise_type> handle) 
 		:my_handle(handle){
 	}
 
 	//Copy Constructor
-	BlockingTask(BlockingTask& t) = delete;
+	Sync(Sync& t) = delete;
 
 	//Move Constructor
-	BlockingTask(BlockingTask&& rhs) :my_handle(rhs.my_handle) {
+	Sync(Sync&& rhs) :my_handle(rhs.my_handle) {
 		rhs.my_handle = nullptr;
 	}
 
 	//Copy Assignment
-	BlockingTask& operator=(const BlockingTask& t) = delete;
+	Sync& operator=(const Sync& t) = delete;
 
 	//Move Assigment
-	BlockingTask& operator=(BlockingTask&& rhs) = delete;
+	Sync& operator=(Sync&& rhs) = delete;
 	
 	//Destructor
-	~BlockingTask(){
+	~Sync(){
 		if (my_handle){
 			my_handle.destroy(); 
 		}		
@@ -121,5 +121,25 @@ struct BlockingTask {
 
 
 };
+
+
+template<typename T>
+using ValueTypeOf = std::remove_reference<T>::type::value_type;
+
+template<typename A>
+Sync<ValueTypeOf<A>> sync_impl(A awaitable){
+	co_return co_await awaitable;
+};
+
+template<typename A>
+auto sync(A&& awaitable){
+	return sync_impl<A>(std::forward<A>(awaitable));
+};
+
+template<typename A>
+auto sync_run(A&& awaitable){
+	return sync(std::forward<A>(awaitable)).await();
+}
+
 
 #endif

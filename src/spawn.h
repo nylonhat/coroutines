@@ -4,6 +4,20 @@
 #include "coroutine_flag.h"
 #include "scheduler.h"
 
+
+/**
+ * Child stealing  
+ *
+ *         ╭─ spawn ─ task ─ spawn ─╼ ╌╌╌╌╮
+ * caller ─┷──────── cont' ───────────────┷── caller 
+ *
+ *         ╭─ spawn ─ task ─ spawn ───┯────── caller
+ * caller ─┷────── cont' ─────╼ ╌╌╌╌╌╌╯
+ *
+ *
+ */
+
+
 template<typename T, Scheduler S>
 struct [[nodiscard]] Spawn {
 	struct promise_type {

@@ -3,9 +3,18 @@
 
 #include "coroutine_flag.h"
 #include "scheduler.h"
-#include <iostream>
-#include <thread>
-#include <variant>
+
+/**
+ * Continuation stealing  
+ *
+ *         ╭───────── cont' ──────────────┯── caller
+ * caller ─┷─ branch ─ task ─ branch ╼ ╌╌╌╯
+ *
+ *
+ *         ╭──── cont' ──╼ ╌╌╌╌╌╌╌╌╌╌╌╮
+ * caller ─┷─ branch ─ task ─ branch ─┷────── caller 
+ * 
+ */
 
 template<typename T, Scheduler S>
 struct [[nodiscard]] Branch {

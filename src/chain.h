@@ -9,15 +9,8 @@
  * task asynchronously on a different execution context, dictated 
  * by a scheduler.
  *
- * Chaining is an example of asynchronous execution: One coroutine will
- * susupend itself first before transferring control to another coroutine.
- * Once that coroutine has finished, it will suspend itself and return
- * execution back to the original coroutine. At no point are these 
- * coroutines running at the same time; hence there is no need for thread
- * synchronisation. 
- *
- * Caller Coroutine -> Chained Task -> Scheduler -> Chained Task -> Task 
- * Caller Coroutine <- Chained Task <- Scheduler <- Chained Task <- Task 
+ *                ┌── task ──┐
+ * caller ─ chain ┘          └ chain ─ caller 
  */
 
 template<typename T, Scheduler S>

@@ -1,12 +1,12 @@
 #include "backoff.h"
-#include "work_steal_pool.h"
+#include "threadpool.h"
 #include <random>
 #include <iostream>
 
-thread_local int WorkStealPool::worker_id = 0;
-thread_local WorkStealPool* WorkStealPool::my_pool = nullptr;
+thread_local int Threadpool::worker_id = 0;
+thread_local Threadpool* Threadpool::my_pool = nullptr;
 
-WorkStealPool::WorkStealPool(int num_threads) {
+Threadpool::Threadpool(int num_threads) {
 
 	//define worker loop
 	auto work = [this](){
@@ -60,11 +60,11 @@ WorkStealPool::WorkStealPool(int num_threads) {
 	}
 }
 
-WorkStealPool::~WorkStealPool(){
+Threadpool::~Threadpool(){
 	running.store(false);
 }
 
-std::coroutine_handle<> WorkStealPool::schedule(std::coroutine_handle<> task){
+std::coroutine_handle<> Threadpool::schedule(std::coroutine_handle<> task){
 	//thread does not belong to this pool
 	if(my_pool != this){
 		return master_queue.try_enqueue(task) ? std::noop_coroutine() : task;
