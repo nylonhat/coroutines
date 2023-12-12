@@ -18,10 +18,10 @@ struct Threadpool {
 private:
 	std::atomic<bool> running{true};
 	std::vector<std::jthread> threads;
-	thread_local static int worker_id;
+	thread_local static size_t worker_id;
 	thread_local static Threadpool* my_pool;
 
-	std::atomic<int> worker_id_ticket = 0;
+	std::atomic<size_t> worker_id_ticket = 0;
 	std::array<Deque<std::coroutine_handle<>,4>, 16> queues{};
 	Queue<std::coroutine_handle<>, 16> master_queue{};
 
@@ -33,6 +33,7 @@ public:
 	~Threadpool();
 	
 private:	
+	void work();
 
 public:
 	std::coroutine_handle<> schedule(std::coroutine_handle<> task);
