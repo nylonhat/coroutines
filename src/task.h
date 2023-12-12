@@ -26,6 +26,7 @@
 
 template<typename T>
 struct Task {
+	using value_type = T;
 
 	struct promise_type {
 		T value;

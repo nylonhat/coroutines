@@ -8,7 +8,7 @@ GCC := g++ -fcoroutines
 CXX := $(CLANG) -std=c++20
 
 DEBUG := -Wall -g -O3 -fsanitize=thread
-RELEASE := -O3 -march=native -DNDEBUG -fno-exceptions
+RELEASE := -O3 -march=native -DNDEBUG #-fno-exceptions
 
 ifdef OS
 	

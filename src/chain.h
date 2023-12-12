@@ -121,25 +121,18 @@ struct Chain {
 };
 
 
+template<typename T>
+using ValueTypeOf = std::remove_reference<T>::type::value_type;
+
 //Chaining Implementation
-template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-Chain<T, S> chain_by_value_on(S& scheduler, AWAITABLE<T> awaitable){
+template<Scheduler S, typename A>
+Chain<ValueTypeOf<A>, S> chain_on_impl(S& scheduler, A awaitable){
 	co_return co_await awaitable;
 };
 
-template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-Chain<T, S> chain_by_reference_on(S& scheduler, AWAITABLE<T>& awaitable){
-	co_return co_await awaitable;
-};
-
-template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-Chain<T, S> chain_on(S& scheduler, AWAITABLE<T>&& awaitable){
-	return chain_by_value_on(scheduler, std::move(awaitable));
-};
-
-template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-Chain<T, S> chain_on(S& scheduler, AWAITABLE<T>& awaitable){
-	return chain_by_reference_on(scheduler, awaitable);
+template<Scheduler S, typename A>
+auto chain_on(S& scheduler, A&& awaitable){
+	return chain_on_impl<S, A>(scheduler, std::forward<A>(awaitable));
 };
 
 

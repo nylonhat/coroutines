@@ -115,26 +115,21 @@ struct [[nodiscard]] Spawn {
 
 };
 
-//Branching Implementation
-template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-Spawn<T, S> spawn_by_value_on(S& scheduler, AWAITABLE<T> awaitable){
+
+
+template<typename T>
+using ValueTypeOf = std::remove_reference<T>::type::value_type;
+
+template<Scheduler S, typename A>
+Spawn<ValueTypeOf<A>, S> spawn_on_impl(S& scheduler, A awaitable){
 	co_return co_await awaitable;
 };
 
-template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-Spawn<T, S> spawn_by_reference_on(S& scheduler, AWAITABLE<T>& awaitable){
-	co_return co_await awaitable;
+template<Scheduler S, typename A>
+auto spawn_on(S& scheduler, A&& awaitable){
+	return spawn_on_impl<S, A>(scheduler, std::forward<A>(awaitable));
 };
 
-template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-Spawn<T, S> spawn_on(S& scheduler, AWAITABLE<T>&& awaitable){
-	return spawn_by_value_on(scheduler, std::move(awaitable));
-};
-
-template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-Spawn<T, S> spawn_on(S& scheduler, AWAITABLE<T>& awaitable){
-	return spawn_by_reference_on(scheduler, awaitable);
-};
 
 
 #endif

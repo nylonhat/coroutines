@@ -105,25 +105,20 @@ struct [[nodiscard]] Branch {
 
 };
 
-//Branching Implementation
-template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-Branch<T, S> branch_by_value_on(S& scheduler, AWAITABLE<T> awaitable){
+
+
+template<typename T>
+using ValueTypeOf = std::remove_reference<T>::type::value_type;
+
+//Chaining Implementation
+template<Scheduler S, typename A>
+Branch<ValueTypeOf<A>, S> branch_on_impl(S& scheduler, A awaitable){
 	co_return co_await awaitable;
 };
 
-template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-Branch<T, S> branch_by_reference_on(S& scheduler, AWAITABLE<T>& awaitable){
-	co_return co_await awaitable;
-};
-
-template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-Branch<T, S> create_branch_on(S& scheduler, AWAITABLE<T>&& awaitable){
-	return branch_by_value_on(scheduler, std::move(awaitable));
-};
-
-template<Scheduler S, template<typename>typename AWAITABLE, typename T>
-Branch<T, S> create_branch_on(S& scheduler, AWAITABLE<T>& awaitable){
-	return branch_by_reference_on(scheduler, awaitable);
+template<Scheduler S, typename A>
+auto create_branch_on(S& scheduler, A&& awaitable){
+	return branch_on_impl<S, A>(scheduler, std::forward<A>(awaitable));
 };
 
 
@@ -168,7 +163,7 @@ struct [[nodiscard]] BranchAwaiter {
 
 };
 
-//Forking Implementation
+
 template<Scheduler S, typename A>
 auto branch_on(S& scheduler, A&& awaitable){
 	return BranchAwaiter(scheduler, std::forward<A>(awaitable));

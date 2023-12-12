@@ -39,7 +39,6 @@ struct BlockingTask {
 			std::coroutine_handle<> await_suspend (std::coroutine_handle<> handle) noexcept {
 				promise.flag.test_and_set();
 				promise.flag.notify_all();
-			
 				return std::noop_coroutine();
 			}
 
@@ -102,7 +101,6 @@ struct BlockingTask {
 		}
 
 		my_handle.resume();
-
 		my_handle.promise().flag.wait(false);
 		my_handle.promise().flag.clear();
 		
