@@ -6,6 +6,7 @@
 
 #include "liburing/liburing.h"
 #include "io_uring_callback.h"
+#include "udp_socket_linux.h"
 
 namespace networking {
 
@@ -19,6 +20,9 @@ struct AsyncIO {
 	~AsyncIO();
 
 	void submitNoop(IOUringData& data);
+
+	bool addSocket(udp::Socket& socket);
+
 };
 
 }

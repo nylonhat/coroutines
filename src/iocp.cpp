@@ -39,7 +39,7 @@ IOCP::~IOCP(){
 }
 
 
-bool IOCP::addSocket(udp::Socket socket){
+bool IOCP::addSocket(udp::Socket& socket){
 	
 	HANDLE result = CreateIoCompletionPort((HANDLE)socket.socket_handle, iocp_handle, 0, 0);
 	if(result == NULL){

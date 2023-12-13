@@ -7,6 +7,8 @@
 #include <iostream>
 
 #include "udp_socket_linux.h"
+#include "liburing/liburing.h"
+#include "io_task_linux.h"
 
 namespace networking::udp{
 
@@ -53,9 +55,9 @@ addrinfo* Socket::resolveAddressInfo(const char* address, const char* port, addr
 }
 
 bool Socket::createSocket(addrinfo* address){
-	file_descriptor = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
+	sockfd = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
 	
-	if(file_descriptor == INVALID_SOCKET){
+	if(sockfd == INVALID_SOCKET){
 		return false;
 	}
 
@@ -63,11 +65,11 @@ bool Socket::createSocket(addrinfo* address){
 }
 
 bool Socket::bindSocket(addrinfo* source){
-	int error_code = bind(file_descriptor, source->ai_addr, source->ai_addrlen);
+	int error_code = bind(sockfd, source->ai_addr, source->ai_addrlen);
 
 	if(error_code == SOCKET_ERROR){
-		close(file_descriptor);
-		file_descriptor = INVALID_SOCKET;
+		close(sockfd);
+		sockfd = INVALID_SOCKET;
 		return false;
 	}
 
@@ -75,11 +77,12 @@ bool Socket::bindSocket(addrinfo* source){
 }
 
 bool Socket::connectSocket(addrinfo* address){
-	int error_code = ::connect(file_descriptor, address->ai_addr, (int)address->ai_addrlen);
+	int error_code = ::connect(sockfd, address->ai_addr, (int)address->ai_addrlen);
 
 	if(error_code == SOCKET_ERROR){
-		close(file_descriptor);
-		file_descriptor = INVALID_SOCKET;
+		std::cout << "socket connect failed\n";
+		close(sockfd);
+		sockfd = INVALID_SOCKET;
 		return false;
 	}
 
@@ -92,7 +95,7 @@ bool Socket::connectSocket(addrinfo* address){
 	socklen_t len = sizeof(sin);
 	char m_s_host[INET_ADDRSTRLEN];
 
-	if (getsockname(file_descriptor, (struct sockaddr *)&sin, &len) == SOCKET_ERROR){
+	if (getsockname(sockfd, (struct sockaddr *)&sin, &len) == SOCKET_ERROR){
 		std::cout << "Can't get source port\n";
 	}else{
 		inet_ntop(AF_INET, &(sin.sin_addr), m_s_host, INET_ADDRSTRLEN);
@@ -105,7 +108,7 @@ bool Socket::connectSocket(addrinfo* address){
 } 
 
 bool Socket::connect(const char* s_address, const char* s_port, const char* d_address, const char* d_port){
-	close(file_descriptor);
+	close(sockfd);
 	addrinfo* attempt = NULL;
 	
 	addrinfo* s_addrinfo = resolveAddressInfo(s_address, s_port, getSourceHints());
@@ -132,7 +135,8 @@ bool Socket::connect(const char* s_address, const char* s_port, const char* d_ad
     freeaddrinfo(s_addrinfo);
 	freeaddrinfo(d_addrinfo);
 
-	if(file_descriptor == INVALID_SOCKET){
+	if(sockfd == INVALID_SOCKET){
+		std::cout << "Connect failed\n";
 		return false;
 	}
 
@@ -141,22 +145,11 @@ bool Socket::connect(const char* s_address, const char* s_port, const char* d_ad
 }
 
 void Socket::disconnect(){
-	close(file_descriptor);
-	file_descriptor = INVALID_SOCKET;
+	close(sockfd);
+	sockfd = INVALID_SOCKET;
 }
 
 
-/*
-SendingTask<bool> Socket::send(const char* send_buffer, size_t send_buffer_size){
-	//TODO: check if socket is not nullptr
-	return SendingTask<bool>(file_descriptor, send_buffer, send_buffer_size);
-}
-
-RecvingTask<bool> Socket::recv(char* recv_buffer, size_t recv_buffer_size){
-	
-	return RecvingTask<bool>(file_descriptor, recv_buffer, recv_buffer_size);
-}
-*/
 
 }
 

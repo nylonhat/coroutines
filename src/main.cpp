@@ -1,11 +1,7 @@
 #include "dag_system.h"
 //#include "io_system.h"
-//#include "udp_socket_linux.h"
-//#include "async_io_linux.h"
+#include "io_system_linux.h"
 
-#include <thread>
-#include <iostream>
-using namespace std::literals;
 
 int main() {
 /*
@@ -14,18 +10,18 @@ int main() {
 	
 	IOSystem io_system;
 	
-	io_system.entry().block_and_get();
+	io_system.entry().await();
 
 	WSACleanup();
 
-*
 */
-//	networking::AsyncIO async_io;
+	
+	IOSystem io_system{};
+	io_system.entry().await();
 
-//	networking::udp::Socket socket;
-//	socket.connect(0, "21212", "10.0.0.109", "5555");
-	DagSystem dag_system;
-	dag_system.entry().await();
+	//DagSystem dag_system;
+	//dag_system.entry().await();
+	
 	return 0;
 
 }

@@ -4,8 +4,11 @@
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <netdb.h>
-//#include "sending_task_linux.h"
-//#include "recving_task_linux.h"
+#include <iostream>
+
+#include <liburing/liburing.h>
+#include "io_task_linux.h"
+
 
 namespace networking::udp {
 
@@ -14,7 +17,9 @@ struct Socket{
 	const static int SOCKET_ERROR = -1;
 
 
-	int file_descriptor = INVALID_SOCKET;
+	int sockfd = INVALID_SOCKET;
+
+	io_uring* ring;
 
 	//Constructor
 	Socket();
@@ -39,9 +44,29 @@ struct Socket{
 
 	void disconnect();
 
-	//SendingTask<bool> send(const char* send_buffer, size_t send_buffer_size);
+	auto send(const char* buf, size_t len){
 
-	//RecvingTask<bool> recv(char* recv_buffer, size_t recv_buffer_size);
+		auto lambda = [=](IOUringData& data){
+			io_uring_sqe *sqe = io_uring_get_sqe(ring);
+			io_uring_prep_send(sqe, sockfd, buf, len, 0);
+			io_uring_sqe_set_data(sqe, &data);
+			io_uring_submit(ring);
+		};
+
+		return IOTask(lambda);
+
+	}
+
+	auto recv(char* buf, size_t len){
+		auto lambda = [=](IOUringData& data){
+			io_uring_sqe *sqe = io_uring_get_sqe(ring);
+			io_uring_prep_recv(sqe, sockfd, buf, len, 0);
+			io_uring_sqe_set_data(sqe, &data);
+			io_uring_submit(ring);
+		};
+
+		return IOTask(lambda);
+	}
 
 
 };

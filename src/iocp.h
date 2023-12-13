@@ -18,7 +18,7 @@ struct IOCP {
 
 	~IOCP();
 
-	bool addSocket(udp::Socket socket);
+	bool addSocket(udp::Socket& socket);
 
 
 };

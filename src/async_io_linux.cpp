@@ -1,5 +1,6 @@
 #ifdef __linux__
 
+#include <iostream>
 #include "async_io_linux.h"
 #include "io_uring_callback.h"
 namespace networking {
@@ -13,13 +14,15 @@ AsyncIO::AsyncIO(){
 			io_uring_cqe* cqe;
 			int error_code = io_uring_wait_cqe(&ring, &cqe);
 
-			if(error_code < 0){
+			if(error_code != 0){
 				continue;
 			}
 
 			auto* data = static_cast<IOUringData*>(io_uring_cqe_get_data(cqe));
+			std::cout << "cqe.res: " << cqe->res << "\n"; 
 
 			data->callback();
+			io_uring_cqe_seen(&ring, cqe);
 		}
 	};
 
@@ -46,8 +49,12 @@ void AsyncIO::submitNoop(IOUringData& data){
 
 }
 
+bool AsyncIO::addSocket(udp::Socket& socket){
+	socket.ring = &ring;
+	return true;
 }
 
+}
 
 #endif
 
