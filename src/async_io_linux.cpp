@@ -16,6 +16,7 @@ AsyncIO::AsyncIO(){
 			int error_code = io_uring_wait_cqe(&ring, &cqe);
 
 			if(error_code != 0){
+				std::cout << "wait cqe error\n";
 				continue;
 			}
 

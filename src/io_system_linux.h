@@ -21,16 +21,23 @@ struct IOSystem {
 
 		std::string message = "hello string\n";
 
-		int bytes = co_await socket.send(message.c_str(), message.size()+1);
-		std::cout << "bytes sent: " << bytes << std::endl;
+		int bytes_sent = co_await socket.send(message.c_str(), message.size()+1);
+		std::cout << "bytes sent: " << bytes_sent << std::endl;
 	
 		//std::cout << co_await threadpool.chain(socket.send("test",5)) << "\n"; 		
-
-		//	char read_buffer[16] = {};
-		//	co_await socket.recv(read_buffer, sizeof(read_buffer));
-		//	read_buffer[15] = '\0';
-		//	std::cout << read_buffer;
 		
+		while(true){
+			char read_buffer[32] = {};
+			int bytes_recv = co_await socket.recv(read_buffer, sizeof(read_buffer));
+			read_buffer[31] = '\0';
+			std::cout << read_buffer;
+
+			//echo
+			int bytes_sent = co_await socket.send(read_buffer, bytes_recv);
+
+
+		}
+
 		co_return 0;
 	}
 

@@ -45,7 +45,7 @@ struct Socket{
 	void disconnect();
 
 	auto send(const char* buf, size_t len){
-		auto lambda = [=](UringData& data){
+		auto lambda = [=, this](UringData& data){
 			io_uring_sqe *sqe = io_uring_get_sqe(ring);
 			io_uring_prep_send(sqe, sockfd, buf, len, 0);
 			io_uring_sqe_set_data(sqe, &data);
@@ -56,7 +56,7 @@ struct Socket{
 	}
 
 	auto recv(char* buf, size_t len){
-		auto lambda = [=](UringData& data){
+		auto lambda = [=, this](UringData& data){
 			io_uring_sqe *sqe = io_uring_get_sqe(ring);
 			io_uring_prep_recv(sqe, sockfd, buf, len, 0);
 			io_uring_sqe_set_data(sqe, &data);
