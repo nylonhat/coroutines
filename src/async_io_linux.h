@@ -5,10 +5,10 @@
 #include <atomic>
 
 #include "liburing/liburing.h"
-#include "io_uring_callback.h"
+#include "uring_data.h"
 #include "udp_socket_linux.h"
 
-namespace networking {
+namespace net {
 
 struct AsyncIO {
 	io_uring ring;
@@ -19,7 +19,7 @@ struct AsyncIO {
 
 	~AsyncIO();
 
-	void submitNoop(IOUringData& data);
+	void submitNoop(UringData& data);
 
 	bool addSocket(udp::Socket& socket);
 

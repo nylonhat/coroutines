@@ -2,16 +2,16 @@
 #define IO_TASK_LINUX_H
 
 #include <coroutine>
-#include "io_uring_callback.h"
+#include "uring_data.h"
 
-namespace networking::udp {
+namespace net::udp {
 
 template<typename F>
 struct IOTask {
-	using value_type = bool;
+	using value_type = int;
 
 	F func;
-	IOUringData data;
+	UringData data;
 
 	IOTask(F func)
 		:func{func}
@@ -25,8 +25,8 @@ struct IOTask {
 		return true;
 	}
 
-	bool await_resume(){
-		return data.callback_completed;
+	int await_resume(){
+		return data.res;
 	}
 
 

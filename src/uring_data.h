@@ -1,14 +1,15 @@
-#ifndef IO_URING_CALLBACK_H
-#define IO_URING_CALLBACK_H
+#ifndef URING_DATA_H
+#define URING_DATA_H
 
 #include <functional>
 #include <coroutine>
 
-namespace networking {
+namespace net {
 
-struct IOUringData {
+struct UringData {
 	std::coroutine_handle<> waiting_handle = std::noop_coroutine();
 	bool callback_completed = false;
+	int res = 0;
 
 	void callback(){
 		waiting_handle.resume();

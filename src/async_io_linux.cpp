@@ -2,8 +2,9 @@
 
 #include <iostream>
 #include "async_io_linux.h"
-#include "io_uring_callback.h"
-namespace networking {
+#include "uring_data.h"
+
+namespace net {
 
 AsyncIO::AsyncIO(){
 	io_uring_queue_init(16, &ring, 0);
@@ -18,9 +19,8 @@ AsyncIO::AsyncIO(){
 				continue;
 			}
 
-			auto* data = static_cast<IOUringData*>(io_uring_cqe_get_data(cqe));
-			std::cout << "cqe.res: " << cqe->res << "\n"; 
-
+			auto* data = static_cast<UringData*>(io_uring_cqe_get_data(cqe));
+			data->res = cqe->res;
 			data->callback();
 			io_uring_cqe_seen(&ring, cqe);
 		}
@@ -33,7 +33,7 @@ AsyncIO::~AsyncIO(){
 	running.store(false);
 
 	//Submit last blank IO to wakeup thread last time 
-	IOUringData data;
+	UringData data;
 	submitNoop(data);
 
 	thread.join();
@@ -41,7 +41,7 @@ AsyncIO::~AsyncIO(){
 
 }
 
-void AsyncIO::submitNoop(IOUringData& data){
+void AsyncIO::submitNoop(UringData& data){
 	io_uring_sqe *sqe = io_uring_get_sqe(&ring);
 	io_uring_prep_nop(sqe);
 	io_uring_sqe_set_data(sqe, &data);

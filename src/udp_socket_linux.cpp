@@ -10,7 +10,7 @@
 #include "liburing/liburing.h"
 #include "io_task_linux.h"
 
-namespace networking::udp{
+namespace net::udp{
 
 Socket::Socket(){
 
@@ -48,6 +48,7 @@ addrinfo* Socket::resolveAddressInfo(const char* address, const char* port, addr
 	int error_code = getaddrinfo(address, port, &hints, &addrinfo_ptr);
 	if(error_code != 0){
 		//TODO failed
+		std::cout << "getaddrinfo failed\n";
 	}
 
 	return addrinfo_ptr;
@@ -68,6 +69,7 @@ bool Socket::bindSocket(addrinfo* source){
 	int error_code = bind(sockfd, source->ai_addr, source->ai_addrlen);
 
 	if(error_code == SOCKET_ERROR){
+		std::cout << "unable to bind\n";
 		close(sockfd);
 		sockfd = INVALID_SOCKET;
 		return false;
