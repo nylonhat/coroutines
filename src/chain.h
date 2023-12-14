@@ -20,8 +20,8 @@ struct Chain {
 		std::coroutine_handle<> waiting_handle = std::noop_coroutine();
 		S& scheduler;
 
-		template<template<typename>typename AWAITABLE>
-		promise_type(S& scheduler, AWAITABLE<T>& awaitable)
+		template<typename A>
+		promise_type(S& scheduler, A& awaitable)
 			:scheduler{scheduler}{
 		}
 

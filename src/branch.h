@@ -23,8 +23,8 @@ struct [[nodiscard]] Branch {
 		S& scheduler;
 		CoroFlag<T> flag;
 
-		template<template<typename>typename AWAITABLE>
-		promise_type(S& scheduler, AWAITABLE<T> &awaitable)
+		template<typename A>
+		promise_type(S& scheduler, A& awaitable)
 			:scheduler{scheduler}
 			,flag(value)
 		{
@@ -132,20 +132,22 @@ auto create_branch_on(S& scheduler, A&& awaitable){
 
 
 
-template<typename T, Scheduler S, template<typename>typename A>
+template<typename T, Scheduler S>
 struct [[nodiscard]] BranchAwaiter {
 	S& scheduler;
 	Branch<T, S> branch;
 
-	BranchAwaiter(S& scheduler, A<T>&& awaitable)
+	template<typename A>
+	BranchAwaiter(S& scheduler, A&& awaitable)
 		:scheduler{scheduler}
-		,branch{create_branch_on(scheduler, std::move(awaitable))}
+		,branch{create_branch_on(scheduler, std::forward<A>(awaitable))}
 	{}
 	
-	BranchAwaiter(S& scheduler, A<T>& awaitable)
-		:scheduler{scheduler}
-		,branch{create_branch_on(scheduler, awaitable)}
-	{}
+	//template<typename A>
+	//BranchAwaiter(S& scheduler, A& awaitable)
+	//	:scheduler{scheduler}
+	//	,branch{create_branch_on(scheduler, awaitable)}
+	//{}
 
 	//Awaiter
 	bool await_ready() noexcept{
@@ -175,7 +177,7 @@ struct [[nodiscard]] BranchAwaiter {
 
 template<Scheduler S, typename A>
 auto branch_on(S& scheduler, A&& awaitable){
-	return BranchAwaiter(scheduler, std::forward<A>(awaitable));
+	return BranchAwaiter<ValueTypeOf<A>, S>(scheduler, std::forward<A>(awaitable));
 };
 
 #endif

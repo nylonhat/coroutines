@@ -25,8 +25,8 @@ struct [[nodiscard]] Spawn {
 		S& scheduler;
 		CoroFlag<T> flag;
 
-		template<template<typename>typename AWAITABLE>
-		promise_type(S& scheduler, AWAITABLE<T> &awaitable)
+		template<typename A>
+		promise_type(S& scheduler, A &awaitable)
 			:scheduler{scheduler}
 			,flag(value)
 		{

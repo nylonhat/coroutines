@@ -4,12 +4,15 @@
 #include "sync.h"
 #include "async_io_linux.h"
 #include <iostream>
+#include "threadpool.h"
 
 struct IOSystem {
 	net::AsyncIO async_io;
+	Threadpool threadpool;
 
 	IOSystem()
 		: async_io()
+		, threadpool(2)
 	{}
 
 	Sync<int> entry(){
@@ -33,7 +36,8 @@ struct IOSystem {
 			std::cout << read_buffer;
 
 			//echo
-			int bytes_sent = co_await socket.send(read_buffer, bytes_recv);
+			auto send_task = socket.send(read_buffer, bytes_recv);
+			int bytes_sent = co_await co_await threadpool.branch(std::move(send_task));
 
 
 		}
