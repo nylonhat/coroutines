@@ -143,11 +143,6 @@ struct [[nodiscard]] BranchAwaiter {
 		,branch{create_branch_on(scheduler, std::forward<A>(awaitable))}
 	{}
 	
-	//template<typename A>
-	//BranchAwaiter(S& scheduler, A& awaitable)
-	//	:scheduler{scheduler}
-	//	,branch{create_branch_on(scheduler, awaitable)}
-	//{}
 
 	//Awaiter
 	bool await_ready() noexcept{

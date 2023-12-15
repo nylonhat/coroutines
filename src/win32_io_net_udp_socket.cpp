@@ -1,10 +1,9 @@
 #ifdef _WIN32
 
-#include "udp_socket_wsa.h"
+#include "win32_io_net_udp_socket.h"
 #include <iostream>
 
-namespace networking {
-namespace udp {
+namespace win32::io::net::udp {
 
 Socket::Socket(){
 
@@ -131,7 +130,7 @@ bool Socket::connect(PCSTR s_address, PCSTR s_port, PCSTR d_address, PCSTR d_por
 	if(socket_handle == INVALID_SOCKET){
 		return false;
 	}
-
+	
 	return true;
 
 }
@@ -142,19 +141,6 @@ void Socket::disconnect(){
 }
 
 
-
-SendingTask<bool> Socket::send(const char* send_buffer, size_t send_buffer_size){
-	//TODO: check if socket is not nullptr
-	return SendingTask<bool>(socket_handle, send_buffer, send_buffer_size);
-}
-
-RecvingTask<bool> Socket::recv(char* recv_buffer, size_t recv_buffer_size){
-	
-	return RecvingTask<bool>(socket_handle, recv_buffer, recv_buffer_size);
-}
-
-
-}
 }
 
 

@@ -1,12 +1,12 @@
-#ifndef URING_DATA_H
-#define URING_DATA_H
+#ifndef LINUX_IO_REQUEST_DATA_H
+#define LINUX_IO_REQUEST_DATA_H
 
 #include <functional>
 #include <coroutine>
 
-namespace net {
+namespace linux::io {
 
-struct UringData {
+struct RequestData {
 	std::coroutine_handle<> waiting_handle = std::noop_coroutine();
 	bool callback_completed = false;
 	int res = 0;

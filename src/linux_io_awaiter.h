@@ -1,19 +1,19 @@
-#ifndef IO_TASK_LINUX_H
-#define IO_TASK_LINUX_H
+#ifndef LINUX_IO_AWAITER_H
+#define LINUX_IO_AWAITER_H
 
 #include <coroutine>
-#include "uring_data.h"
+#include "linux_io_request_data.h"
 
-namespace net::udp {
+namespace linux::io {
 
 template<typename F>
-struct IOTask {
+struct Awaiter {
 	using value_type = int;
 
 	F func;
-	UringData data;
+	RequestData data;
 
-	IOTask(F func)
+	Awaiter(F func)
 		:func{func}
 	{}
 

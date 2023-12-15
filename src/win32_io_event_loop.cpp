@@ -1,11 +1,11 @@
 #ifdef _WIN32
 
-#include "io_completion_data_wsa.h"
-#include "iocp.h"
+#include "win32_io_event_loop.h"
+#include "win32_io_request_data.h"
 
-namespace networking {
+namespace win32::io {
 
-IOCP::IOCP()
+EventLoop::EventLoop()
 {
 	iocp_handle = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, 1);
 
@@ -18,8 +18,9 @@ IOCP::IOCP()
 		while(running){
 			GetQueuedCompletionStatus(iocp_handle, &bytes_transferred, &completion_key, &overlapped, INFINITE);
 			
-			auto* completion_data = static_cast<IOCompletionDataWSA*>(overlapped);
-			
+			auto* completion_data = static_cast<RequestData*>(overlapped);
+		
+			completion_data->res = bytes_transferred;
 			completion_data->callback();
 		}		
 
@@ -30,7 +31,7 @@ IOCP::IOCP()
 }
 
 
-IOCP::~IOCP(){
+EventLoop::~EventLoop(){
 	running.store(false);
 	PostQueuedCompletionStatus(iocp_handle, 0, 999, NULL);
 	
@@ -39,7 +40,7 @@ IOCP::~IOCP(){
 }
 
 
-bool IOCP::addSocket(udp::Socket& socket){
+bool EventLoop::addSocket(net::udp::Socket& socket){
 	
 	HANDLE result = CreateIoCompletionPort((HANDLE)socket.socket_handle, iocp_handle, 0, 0);
 	if(result == NULL){

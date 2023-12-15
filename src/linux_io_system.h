@@ -1,24 +1,25 @@
-#ifndef IO_SYSTEM_LINUX_H
-#define IO_SYSTEM_LINUX_H
+#ifndef LINUX_IO_SYSTEM_H
+#define LINUX_IO_SYSTEM_H
+
+#include <iostream>
 
 #include "sync.h"
-#include "async_io_linux.h"
-#include <iostream>
+#include "linux_io_event_loop.h"
 #include "threadpool.h"
 
 struct IOSystem {
-	net::AsyncIO async_io;
+	linux::io::EventLoop event_loop;
 	Threadpool threadpool;
 
 	IOSystem()
-		: async_io()
+		: event_loop()
 		, threadpool(2)
 	{}
 
 	Sync<int> entry(){
-		net::udp::Socket socket;
+		linux::io::net::udp::Socket socket;
 		
-		async_io.addSocket(socket);
+		event_loop.addSocket(socket);
 		
 		socket.connect(NULL, "21212", "127.0.0.1", "5555");
 

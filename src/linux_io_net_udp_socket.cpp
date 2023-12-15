@@ -6,11 +6,10 @@
 #include <netdb.h>
 #include <iostream>
 
-#include "udp_socket_linux.h"
+#include "linux_io_net_udp_socket.h"
 #include "liburing/liburing.h"
-#include "io_task_linux.h"
 
-namespace net::udp{
+namespace linux::io::net::udp {
 
 Socket::Socket(){
 

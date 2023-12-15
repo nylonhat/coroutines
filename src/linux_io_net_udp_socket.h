@@ -1,5 +1,5 @@
-#ifndef UDP_SOCKET_LINUX_H
-#define UDP_SOCKET_LINUX_H
+#ifndef LINUX_IO_NET_UDP_SOCKET_H
+#define LINUX_IO_NET_UDP_SOCKET_H
 
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -7,10 +7,10 @@
 #include <iostream>
 
 #include <liburing/liburing.h>
-#include "io_task_linux.h"
+#include "linux_io_awaiter.h"
 
 
-namespace net::udp {
+namespace linux::io::net::udp {
 
 struct Socket{
 	const static int INVALID_SOCKET = -1;
@@ -45,25 +45,25 @@ struct Socket{
 	void disconnect();
 
 	auto send(const char* buf, size_t len){
-		auto lambda = [=, this](UringData& data){
+		auto lambda = [=, this](RequestData& data){
 			io_uring_sqe *sqe = io_uring_get_sqe(ring);
 			io_uring_prep_send(sqe, sockfd, buf, len, 0);
 			io_uring_sqe_set_data(sqe, &data);
 			io_uring_submit(ring);
 		};
 
-		return IOTask(lambda);
+		return Awaiter(lambda);
 	}
 
 	auto recv(char* buf, size_t len){
-		auto lambda = [=, this](UringData& data){
+		auto lambda = [=, this](RequestData& data){
 			io_uring_sqe *sqe = io_uring_get_sqe(ring);
 			io_uring_prep_recv(sqe, sockfd, buf, len, 0);
 			io_uring_sqe_set_data(sqe, &data);
 			io_uring_submit(ring);
 		};
 
-		return IOTask(lambda);
+		return Awaiter(lambda);
 	}
 
 

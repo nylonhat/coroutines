@@ -1,12 +1,11 @@
 #ifdef __linux__
 
 #include <iostream>
-#include "async_io_linux.h"
-#include "uring_data.h"
+#include "linux_io_event_loop.h"
 
-namespace net {
+namespace linux::io {
 
-AsyncIO::AsyncIO(){
+EventLoop::EventLoop(){
 	io_uring_queue_init(16, &ring, 0);
 	
 	auto work = [this](){
@@ -20,7 +19,7 @@ AsyncIO::AsyncIO(){
 				continue;
 			}
 
-			auto* data = static_cast<UringData*>(io_uring_cqe_get_data(cqe));
+			auto* data = static_cast<RequestData*>(io_uring_cqe_get_data(cqe));
 			data->res = cqe->res;
 			data->callback();
 			io_uring_cqe_seen(&ring, cqe);
@@ -30,11 +29,11 @@ AsyncIO::AsyncIO(){
 	thread = std::jthread(work);
 }
 
-AsyncIO::~AsyncIO(){
+EventLoop::~EventLoop(){
 	running.store(false);
 
 	//Submit last blank IO to wakeup thread last time 
-	UringData data;
+	RequestData data;
 	submitNoop(data);
 
 	thread.join();
@@ -42,7 +41,7 @@ AsyncIO::~AsyncIO(){
 
 }
 
-void AsyncIO::submitNoop(UringData& data){
+void EventLoop::submitNoop(RequestData& data){
 	io_uring_sqe *sqe = io_uring_get_sqe(&ring);
 	io_uring_prep_nop(sqe);
 	io_uring_sqe_set_data(sqe, &data);
@@ -50,7 +49,7 @@ void AsyncIO::submitNoop(UringData& data){
 
 }
 
-bool AsyncIO::addSocket(udp::Socket& socket){
+bool EventLoop::addSocket(net::udp::Socket& socket){
 	socket.ring = &ring;
 	return true;
 }
