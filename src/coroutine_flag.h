@@ -9,7 +9,7 @@
 
 template<typename T>
 struct CoroFlag {
-	mutable std::atomic<void*> head_of_awaiter_list = nullptr;
+	mutable std::atomic<void*> awaiters_head = nullptr;
 	T& result_reference;
 
 	CoroFlag(T& result) noexcept 
@@ -17,24 +17,27 @@ struct CoroFlag {
 	}
 
 	~CoroFlag(){
-		assert(head_of_awaiter_list.load() == nullptr || head_of_awaiter_list.load() == static_cast<void*>(this));
+		assert(awaiters_head.load() == nullptr 
+			|| awaiters_head.load() == static_cast<void*>(this));
 	}
 	
 	bool is_signalled() const noexcept{
-		return head_of_awaiter_list.load(std::memory_order_acquire) == static_cast<const void*>(this);
+		const auto set_state = static_cast<const void*>(this);
+		return awaiters_head.load(std::memory_order_acquire) == set_state;
 	}
 
 	template<Scheduler S>
 	void signal_and_notify(S& scheduler) noexcept{
 		//Signal set by exchanging the head of list with 'set' state
 		auto* current_awaiter = static_cast<Awaiter*>(
-			head_of_awaiter_list.exchange(static_cast<void*>(this), std::memory_order_acq_rel) 
+			awaiters_head.exchange(static_cast<void*>(this), std::memory_order_acq_rel) 
 		);
 		
 		//Notify by walking through linked list
 		//Scheduling all awaiters in the list
 		while (current_awaiter != nullptr) {
-			//keep a temporary copy of next awaiter since it may be destroyed after awaiter is resumed
+			//keep a temporary copy of next awaiter since it 
+			//may be destroyed after awaiter is resumed
 			auto* temp_next_awaiter = current_awaiter->next_awaiter;
 			
 			//Provide a custom scheduling function
@@ -63,7 +66,7 @@ struct CoroFlag {
 			waiting_handle = awaiting_coroutine;
 
 			// Try to atomically push this awaiter onto the front of the list.
-			void* current_head = flag.head_of_awaiter_list.load(std::memory_order_acquire);
+			void* current_head = flag.awaiters_head.load(std::memory_order_acquire);
 
 			do {
 				// Resume immediately if already in set  state.
@@ -76,7 +79,7 @@ struct CoroFlag {
 
 				// Try to swap the old list head, inserting this awaiter
 				// as the new list head.
-			} while (!flag.head_of_awaiter_list.compare_exchange_weak(
+			} while (!flag.awaiters_head.compare_exchange_weak(
 					current_head, 
 					static_cast<void*>(this), 
 					std::memory_order_release, 
