@@ -13,7 +13,7 @@ struct IOSystem {
 
 	IOSystem()
 		: event_loop()
-		, threadpool(2)
+		, threadpool(0)
 	{}
 
 	Sync<int> entry(){
@@ -21,7 +21,7 @@ struct IOSystem {
 		
 		event_loop.addSocket(socket);
 		
-		socket.connect(NULL, "21212", "127.0.0.1", "5555");
+		socket.connect(NULL, "21212", "127.0.0.1", "27000");
 
 		std::string message = "hello string\n";
 
@@ -34,11 +34,12 @@ struct IOSystem {
 			char read_buffer[32] = {};
 			int bytes_recv = co_await socket.recv(read_buffer, sizeof(read_buffer));
 			read_buffer[31] = '\0';
-			std::cout << read_buffer;
+			std::cout << bytes_recv << " recv: " << read_buffer;
 
 			//echo
 			auto send_task = socket.send(read_buffer, bytes_recv);
-			int bytes_sent = co_await co_await threadpool.branch(std::move(send_task));
+			auto bytes_sent = co_await send_task;
+			//int bytes_sent = co_await co_await threadpool.branch(std::move(send_task));
 
 
 		}
