@@ -1,135 +1,104 @@
 #ifndef QUEUE_H
 #define QUEUE_H
 
-//Modified from https://www.1024cores.net/home/lock-free-algorithms/Queues/bounded-mpmc-Queue
+#include <limits>
+#include <bit>
+#include <array>
+#include <atomic>
+
+//Lock free MPMC Bounded Queue
+//Modified from Dmitry Vyukov's implimentation
+//https://www.1024cores.net/home/lock-free-algorithms/Queues/bounded-mpmc-Queue
 
 template<typename T, size_t buffer_size>
-class alignas(64) Queue{
+requires
+	(buffer_size > 1) &&
+	(buffer_size < std::numeric_limits<size_t>::max()/2) && //circular dif
+	(std::has_single_bit(buffer_size)) //power of 2
 
+class Queue{
 public:
-	//constructor
-	Queue()
-		: buffer_mask_(buffer_size - 1)
-	{
-
-		assert((buffer_size >= 2) && ((buffer_size & (buffer_size - 1)) == 0));
-
+	Queue()	{
 		for(size_t i = 0; i != buffer_size; i += 1){
-			buffer_[i].sequence_.store(i, std::memory_order_relaxed);
+			buffer[i].sequence.store(i, m::relaxed);
 		}
-
-		enqueue_pos_.store(0, std::memory_order_relaxed);
-		dequeue_pos_.store(0, std::memory_order_relaxed);
-
 	}
 	
-	//destructor
-	~Queue(){
-	}
-
+	~Queue() = default;
 
 	bool try_enqueue(T const& data){
-		cell_t* cell;
-		size_t pos = enqueue_pos_.load(std::memory_order_relaxed);
+		Cell* cell;
+		size_t pos = enqueue_pos.load(m::relaxed);
 
 		for(;;){
-			cell = &buffer_[pos & buffer_mask_];
-			size_t seq = cell->sequence_.load(std::memory_order_acquire);
+			cell = &buffer[pos & buffer_mask];
+			size_t seq = cell->sequence.load(m::acquire);
+			
+			//Circular difference
 			intptr_t dif = (intptr_t)seq - (intptr_t)pos;
 			
-			//We can potentially claim the front position
-			if(dif == 0){
-				//Try to claim position
-				if(enqueue_pos_.compare_exchange_weak(pos, pos + 1, std::memory_order_relaxed)){
-					//Successfully claimed position
-					break;
-				}
-				//Retry all over
-			}
-			
-			//Fail if Queue is full
-			else if(dif < 0){
+			if(dif < 0){
 				return false;
 			}
 			
-			//We were beat to the front; try again
-			else{
-				pos = enqueue_pos_.load(std::memory_order_relaxed);
+			if(dif > 0){
+				pos = enqueue_pos.load(m::relaxed);
+				continue;
+			}
+			
+			if(enqueue_pos.compare_exchange_weak(pos, pos + 1, m::relaxed)){
+				break;
 			}
 		}
 		
-		//Store data into the Queue
-		cell->data_ = data;
-		cell->sequence_.store(pos + 1, std::memory_order_release);
+		cell->data = data;
+		cell->sequence.store(pos + 1, m::release);
 		return true;
-
 	}
 
 	bool try_dequeue(T& data){
-		cell_t* cell;
-		size_t pos = dequeue_pos_.load(std::memory_order_relaxed);
+		Cell* cell;
+		size_t pos = dequeue_pos.load(m::relaxed);
 
 		for(;;){
-			cell = &buffer_[pos & buffer_mask_];
-			size_t seq = cell->sequence_.load(std::memory_order_acquire);
+			cell = &buffer[pos & buffer_mask];
+			size_t seq = cell->sequence.load(m::acquire);
 			intptr_t dif = (intptr_t)seq - (intptr_t)(pos + 1);
 			
-			//We can potentially claim the front deQueue position
-			if(dif == 0){
-				//Try to claim position
-				if(dequeue_pos_.compare_exchange_weak(pos, pos + 1, std::memory_order_relaxed)){
-					//Successfully claimed position
-					break;
-				}
-				//Else try all over again
-			}
-			
-			//Fail if Queue is empty
-			else if(dif < 0){
+			if(dif < 0){
 				return false;
 			}
 			
-			//We were beat out to the front; try again
-			else{
-				pos = dequeue_pos_.load(std::memory_order_relaxed);
+			if(dif > 0){
+				pos = dequeue_pos.load(m::relaxed);
+				continue;
+			}
+			
+			if(dequeue_pos.compare_exchange_weak(pos, pos + 1, m::relaxed)){
+				break;
 			}
 		}
 		
-		//Read data out from the Queue
-		data = cell->data_;
-		cell->sequence_.store(pos + buffer_mask_ + 1, std::memory_order_release);
+		data = cell->data;
+		cell->sequence.store(pos + buffer_mask + 1, m::release);
 		return true;
 	}
 
-
 private:
-
-	struct alignas(64) cell_t{
-		std::atomic<size_t> sequence_;
-		T data_;
-
+	struct alignas(64) Cell{
+		std::atomic<size_t> sequence;
+		T data;
 	};
-
-	//static size_t const cacheline_size = 64;
-	//typedef char cacheline_pad_t [cacheline_size];
 	
-	//Member variables
-	//cacheline_pad_t pad0_;
-	cell_t buffer_[buffer_size];
-	size_t const buffer_mask_;
-	//cacheline_pad_t  pad1_;
-	alignas(64) std::atomic<size_t>  enqueue_pos_;
-	//cacheline_pad_t pad2_;
-	alignas(64) std::atomic<size_t> dequeue_pos_;
-	//cacheline_pad_t pad3_;
+	std::array<Cell, buffer_size> buffer;
+	size_t const buffer_mask = buffer_size - 1;
+	alignas(64) std::atomic<size_t>  enqueue_pos = 0;
+	alignas(64) std::atomic<size_t> dequeue_pos = 0;
 
-	//Copy constructor
-	Queue(Queue const&);
+	Queue(Queue const&) = delete;
+	void operator= (Queue const&) = delete;
 	
-	//Copy assigment
-	void operator= (Queue const&);
-
+	using m = std::memory_order;
 }; 
-
 
 #endif
