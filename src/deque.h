@@ -3,159 +3,113 @@
 
 #include <limits>
 #include <bit>
+#include <array>
+#include <atomic>
 
 template<typename T, size_t buffer_size>
 requires
 	(buffer_size > 1) &&
-	(buffer_size < std::numeric_limits<size_t>::max()/2) &&
+	(buffer_size < std::numeric_limits<size_t>::max()/2) && //circular dif
 	(std::has_single_bit(buffer_size)) //power of 2
+
 class Deque{
 
 public:
-	Deque()
-		: buffer_mask(buffer_size - 1)
-	{
-
+	Deque(){
 		for(size_t i = 0; i < buffer_size; i++){
-			buffer[i].sequence.store(i, std::memory_order_relaxed);
+			buffer[i].sequence.store(i, relaxed);
 		}
-
 	}
 	
-	~Deque(){}
+	~Deque() = default;
 
-	
+
 	bool try_local_push(T const& data){
-		//Check potential cell to push onto local stack end
-		cell_t* cell = &buffer[stack_position & buffer_mask];
-		size_t seq = cell->sequence.load(std::memory_order_acquire);
+		Cell& cell = buffer[stack_id & buffer_mask];
+		size_t seq = cell.sequence.load(acquire);
 		
-		//Check if deque is full
-		if(seq != stack_position){
+		if(seq != stack_id){
 			return false;
 		}
 
-		cell->data = data;
-
-		//Release info to other dequeuers that cell has new data
-		cell->sequence.store(stack_position + 1, std::memory_order_release);
-		stack_position++;
+		cell.data = data;
+		cell.sequence.store(stack_id + 1, release);
+		stack_id++;
 		return true;
 	}
 
 	bool try_local_pop(T& data){
-		//Check potential cell to pop off local stack end
-		cell_t* cell = &buffer[(stack_position-1) & buffer_mask];
+		Cell& cell = buffer[(stack_id - 1) & buffer_mask];
 
-		//Preemptively reverse the cell sequence if deque is not empty
-		//Will signal any lagging stealers that queue is empty now
-		size_t expected_seq = stack_position;
-		if(cell->sequence.compare_exchange_strong(
-			expected_seq, 
-			stack_position-1, 
-			std::memory_order_acq_rel)){
-			
-			//Attempt to race with any potential stealers
-			size_t expected_steal = stack_position-1;
-			if(steal_position.compare_exchange_strong(
-				expected_steal, 
-				stack_position, 
-				std::memory_order_relaxed)){
-				
-				//Beat stealers; we take the last item
-				data = cell->data;
+		size_t old_seq = stack_id;
+		if(!cell.sequence.compare_exchange_strong(old_seq, stack_id - 1, acq_rel)){
+			return false;
+		}
 
-				//Modify cell sequence to be as if we stole like a stealer
-				cell->sequence.store(expected_steal+buffer_size, std::memory_order_release);
-				return true;
-			}
-			
-			//Check if we failed to get last item in deque
-			//Note: expected_steal is now loaded with value from previous CAS
-			if(expected_steal == stack_position){
-				//Didn't get the last item; deque must now be empty
-				//Note: stealer will update cell sequence
-				return false;
-			}
-
-			//Item was not the last item
-			//Free to take because lagging stealers think the deque is empty
-			data = cell->data;
-			stack_position--;
+		size_t old_steal = stack_id - 1;
+		if(steal_id.compare_exchange_strong(old_steal, stack_id, relaxed)){
+			data = cell.data;
+			cell.sequence.store(old_steal + buffer_size, release);
 			return true;
 		}
-		
-		//Deque is empty
-		return false;
-	}
 
-	bool try_steal(T& data){
-		cell_t* cell;
-		size_t pos = steal_position.load(std::memory_order_relaxed);
-
-		for(;;){
-			//Check potential cell to steal from
-			cell = &buffer[pos & buffer_mask];
-			size_t seq = cell->sequence.load(std::memory_order_acquire);
-
-			//Circular difference
-			intptr_t dif = (intptr_t)seq - (intptr_t)(pos + 1);
-			
-			//We can potentially claim the steal position
-			if(dif == 0){
-				//Race for the steal position
-				if(steal_position.compare_exchange_weak(
-					pos, 
-					pos + 1, 
-					std::memory_order_relaxed)){
-					//Success: we are free to steal item from deque
-					break;
-				}
-				//We lost the race; try all over again
-				continue;
-			}
-			
-			else if(dif < 0){
-				//Deque is empty
-				return false;
-			}
-			
-			else{
-				//We are lagging behind the other stealers; try again
-				pos = steal_position.load(std::memory_order_relaxed);
-				continue;
-			}
+		if(old_steal == stack_id){
+			return false;
 		}
-		
-		data = cell->data;
 
-		//Release info to others that cell has been stolen
-		cell->sequence.store(pos + buffer_mask + 1, std::memory_order_release);
+		data = cell.data;
+		stack_id--;
 		return true;
 	}
 
-	
+	bool try_steal(T& data){
+		Cell* cell;
+		size_t old_steal = steal_id.load(relaxed);
+
+		for(;;){
+			cell = &buffer[old_steal & buffer_mask];
+			size_t seq = cell->sequence.load(acquire);
+
+			intptr_t dif = (intptr_t)seq - (intptr_t)(old_steal + 1);
+
+			if(dif < 0){
+				return false;
+			}
+			
+			if(dif > 0){
+				old_steal = steal_id.load(relaxed);
+				continue;
+			}
+
+			if(steal_id.compare_exchange_weak(old_steal, old_steal + 1, relaxed)){
+				break;
+			}
+		}
+
+		data = cell->data;
+		cell->sequence.store(old_steal + buffer_size, release);
+		return true;
+	}
+
 private:
 
-	struct alignas(64) cell_t{
+	struct alignas(64) Cell{
 		std::atomic<size_t> sequence;
 		T data;
 	};
-
 	
-	//Member variables
-	cell_t buffer[buffer_size];
-	size_t const buffer_mask;
-	alignas(64) size_t stack_position = 0;
-	alignas(64) std::atomic<size_t> steal_position = 0;
+	std::array<Cell, buffer_size> buffer;
+	size_t const buffer_mask = buffer_size - 1;
+	alignas(64) size_t stack_id = 0;
+	alignas(64) std::atomic<size_t> steal_id = 0;
 
-	//Copy constructor
 	Deque(Deque const&) = delete;
-	
-	//Copy assigment
 	void operator= (Deque const&) = delete;
 
-}; 
-
+	static constexpr auto acquire = std::memory_order::acquire;
+	static constexpr auto release = std::memory_order::release;
+	static constexpr auto acq_rel = std::memory_order::acq_rel;
+	static constexpr auto relaxed = std::memory_order::relaxed;
+};
 
 #endif
