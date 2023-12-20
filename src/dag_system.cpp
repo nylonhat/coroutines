@@ -34,7 +34,7 @@ Task<size_t> DagSystem::benchmark(int iterations){
 
 	for (size_t i=0; i< iterations; i++){
 		//result = fib_f(50);
-		result = co_await fib(50);
+		result = co_await fib(55);
 		//result += co_await multiply(i,1);
 		//result += co_await threadpool.chain(multiply(i,1));
 		//result += co_await co_await threadpool.branch(multiply(i,1));
