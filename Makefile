@@ -5,7 +5,7 @@ endif
 
 GCC := g++ -fcoroutines
 
-CXX := $(GCC) -std=c++20
+CXX := $(CLANG) -std=c++20
 
 DEBUG := -Wall -g -O3 -fsanitize=thread
 RELEASE := -O3 -march=native -DNDEBUG #-fno-exceptions

@@ -152,7 +152,7 @@ struct [[nodiscard]] BranchAwaiter {
 	//noinline attribute as workaround for miscompilation bug in clang.
 	//https://github.com/llvm/llvm-project/issues/56301
 	//results in correct but slower code! (still faster than gcc)
-	//__attribute__((noinline))
+	__attribute__((noinline))
 	std::coroutine_handle<> await_suspend(std::coroutine_handle<> caller_handle) noexcept{
 		std::coroutine_handle<> branch_handle_copy = branch.my_handle;
 		if(scheduler.schedule(caller_handle) != caller_handle){
