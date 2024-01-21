@@ -12,7 +12,7 @@
 #include "recycler.h"
 
 DagSystem::DagSystem()
-	: threadpool(16)
+	: threadpool(8)
 {}
 
 Sync<int> DagSystem::entry(){
@@ -34,12 +34,12 @@ Task<size_t> DagSystem::benchmark(int iterations){
 
 	for (size_t i=0; i< iterations; i++){
 		//result = fib_f(50);
-		result = co_await fib(55);
+		//result = co_await fib(55);
 		//result += co_await multiply(i,1);
 		//result += co_await threadpool.chain(multiply(i,1));
 		//result += co_await co_await threadpool.branch(multiply(i,1));
 		//result += co_await threadpool.spawn(multiply(i,1));
-		//result += co_await recyclerTest(1'000'000);
+		result += co_await recyclerTest(1'000'000);
 		//result = co_await vectorTest(1'000'000);
 		//result += sync_run(multiply(i,1));
 	}
@@ -87,7 +87,7 @@ Task<size_t> DagSystem::fib(int n){
 Task<int> DagSystem::vectorTest(size_t size){
 	size_t result = 0;
 
-	std::vector<Branch<int,Threadpool>> branches{};
+	std::vector<Branch<int>> branches{};
 	branches.reserve(size);
 
 	for(size_t i = 0; i<size; i++){
@@ -101,29 +101,24 @@ Task<int> DagSystem::vectorTest(size_t size){
 	co_return result;
 }
 
+
 Task<int> DagSystem::recyclerTest(size_t limit){
-	using Branch = std::variant<std::monostate, Branch<int, Threadpool>>;
+	using Branch = std::optional<Branch<int>>;
 	
 	int result = 0;
 	size_t count = 0;
 
-	std::array<Branch, 1000> branches{};
+	std::array<Branch, 4> branches{};
 	Recycler recycler{branches};
 	
 	while(count < limit){
-		auto recycled_slot = recycler.emplace(co_await threadpool.branch(multiply(1,1)));
-
-		if(recycled_slot.index() == 1){
-			result += co_await std::get<1>(recycled_slot);
-		}
-
+		auto maybe_branch = recycler.emplace(co_await threadpool.branch(multiply(1,1)));
+		if(maybe_branch){result += co_await *maybe_branch;}
 		count++;
 	}
 
-	for(auto& branch : branches){
-		if(branch.index() == 1){
-			result += co_await std::get<1>(branch);
-		}
+	for(auto& maybe_branch : branches){
+		if(maybe_branch){result += co_await *maybe_branch;}
 	}
 
 	co_return result;

@@ -18,14 +18,14 @@
  */
 
 
-template<typename T, Scheduler S>
+template<typename T>
 struct [[nodiscard]] Spawn {
 	struct promise_type {
 		T value{};
-		S& scheduler;
+		SchedulerHandle scheduler;
 		CoroFlag<T> flag;
 
-		template<typename A>
+		template<Scheduler S, typename A>
 		promise_type(S& scheduler, A &awaitable)
 			:scheduler{scheduler}
 			,flag(value)
@@ -135,7 +135,7 @@ template<typename T>
 using ValueTypeOf = std::remove_reference<T>::type::value_type;
 
 template<Scheduler S, typename A>
-Spawn<ValueTypeOf<A>, S> spawn_on_impl(S& scheduler, A awaitable){
+Spawn<ValueTypeOf<A>> spawn_on_impl(S& scheduler, A awaitable){
 	co_return co_await awaitable;
 };
 

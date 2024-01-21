@@ -13,14 +13,14 @@
  * caller ─ chain ┘          └ chain ─ caller 
  */
 
-template<typename T, Scheduler S>
+template<typename T>
 struct Chain {
 	struct promise_type {
 		T value;
 		std::coroutine_handle<> waiting_handle = std::noop_coroutine();
-		S& scheduler;
+		SchedulerHandle scheduler;
 
-		template<typename A>
+		template<Scheduler S, typename A>
 		promise_type(S& scheduler, A& awaitable)
 			:scheduler{scheduler}{
 		}
@@ -119,7 +119,7 @@ using ValueTypeOf = std::remove_reference<T>::type::value_type;
 
 //Chaining Implementation
 template<Scheduler S, typename A>
-Chain<ValueTypeOf<A>, S> chain_on_impl(S& scheduler, A awaitable){
+Chain<ValueTypeOf<A>> chain_on_impl(S& scheduler, A awaitable){
 	co_return co_await awaitable;
 };
 

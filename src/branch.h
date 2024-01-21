@@ -16,14 +16,14 @@
  * 
  */
 
-template<typename T, Scheduler S>
+template<typename T>
 struct [[nodiscard]] Branch {
 	struct promise_type {
 		T value{};
-		S& scheduler;
+		SchedulerHandle scheduler;
 		CoroFlag<T> flag;
 
-		template<typename A>
+		template<Scheduler S, typename A>
 		promise_type(S& scheduler, A& awaitable)
 			:scheduler{scheduler}
 			,flag(value)
@@ -121,7 +121,7 @@ using ValueTypeOf = std::remove_reference<T>::type::value_type;
 
 //Chaining Implementation
 template<Scheduler S, typename A>
-Branch<ValueTypeOf<A>, S> branch_on_impl(S& scheduler, A awaitable){
+Branch<ValueTypeOf<A>> branch_on_impl(S& scheduler, A awaitable){
 	co_return co_await awaitable;
 };
 
@@ -132,12 +132,12 @@ auto create_branch_on(S& scheduler, A&& awaitable){
 
 
 
-template<typename T, Scheduler S>
+template<typename T>
 struct [[nodiscard]] BranchAwaiter {
-	S& scheduler;
-	Branch<T, S> branch;
+	SchedulerHandle scheduler;
+	Branch<T> branch;
 
-	template<typename A>
+	template<Scheduler S, typename A>
 	BranchAwaiter(S& scheduler, A&& awaitable)
 		:scheduler{scheduler}
 		,branch{create_branch_on(scheduler, std::forward<A>(awaitable))}
@@ -163,7 +163,7 @@ struct [[nodiscard]] BranchAwaiter {
 		return caller_handle;
 	}
 
-	Branch<T,S> await_resume() noexcept{
+	Branch<T> await_resume() noexcept{
 		return std::move(branch);
 	}
 
@@ -172,7 +172,7 @@ struct [[nodiscard]] BranchAwaiter {
 
 template<Scheduler S, typename A>
 auto branch_on(S& scheduler, A&& awaitable){
-	return BranchAwaiter<ValueTypeOf<A>, S>(scheduler, std::forward<A>(awaitable));
+	return BranchAwaiter<ValueTypeOf<A>>(scheduler, std::forward<A>(awaitable));
 };
 
 #endif
