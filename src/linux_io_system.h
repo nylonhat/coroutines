@@ -13,7 +13,7 @@ struct IOSystem {
 
 	IOSystem()
 		: event_loop()
-		, threadpool(1)
+		, threadpool(0)
 	{}
 
 	Sync<int> entry(){
@@ -33,10 +33,10 @@ struct IOSystem {
 
 		int bytes_sent = co_await socket.send(message.c_str(), message.size()+1);
 		std::println("{:2} send", bytes_sent);
-	
-		int chain_bytes_sent = co_await threadpool.chain(socket.send("test",5));		
 
-	
+		//std::string chain_message = "Sent chained on threadpool";
+		//int chain_bytes_sent = co_await threadpool.chain(socket.send(chain message, chain_message.size()+1));		
+
 		
 		while(true){
 			//Echo server
