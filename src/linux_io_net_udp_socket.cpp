@@ -4,7 +4,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <netdb.h>
-#include <iostream>
+#include <print>
 
 #include "linux_io_net_udp_socket.h"
 #include "liburing/liburing.h"
@@ -47,7 +47,7 @@ addrinfo* Socket::resolveAddressInfo(const char* address, const char* port, addr
 	int error_code = getaddrinfo(address, port, &hints, &addrinfo_ptr);
 	if(error_code != 0){
 		//TODO failed
-		std::cout << "getaddrinfo failed\n";
+		std::println("getaddrinfo failed");
 	}
 
 	return addrinfo_ptr;
@@ -68,7 +68,7 @@ bool Socket::bindSocket(addrinfo* source){
 	int error_code = bind(sockfd, source->ai_addr, source->ai_addrlen);
 
 	if(error_code == SOCKET_ERROR){
-		std::cout << "unable to bind\n";
+		std::println("unable to bind socket");
 		close(sockfd);
 		sockfd = INVALID_SOCKET;
 		return false;
@@ -81,7 +81,7 @@ bool Socket::connectSocket(addrinfo* address){
 	int error_code = ::connect(sockfd, address->ai_addr, (int)address->ai_addrlen);
 
 	if(error_code == SOCKET_ERROR){
-		std::cout << "socket connect failed\n";
+		std::println("socket connect failed");
 		close(sockfd);
 		sockfd = INVALID_SOCKET;
 		return false;
@@ -97,14 +97,13 @@ bool Socket::connectSocket(addrinfo* address){
 	char m_s_host[INET_ADDRSTRLEN];
 
 	if (getsockname(sockfd, (struct sockaddr *)&sin, &len) == SOCKET_ERROR){
-		std::cout << "Can't get source port\n";
+		std::println("couldn't get source port");
 	}else{
 		inet_ntop(AF_INET, &(sin.sin_addr), m_s_host, INET_ADDRSTRLEN);
-		std::cout << m_s_host << ":" << ntohs(sin.sin_port) << " -> ";
 	}
+	std::println("udp connection:");
+	std::println("{}:{} -> {}:{}", m_s_host, ntohs(sin.sin_port), m_d_host, m_d_service);
 
-	std::cout << m_d_host << ":" << m_d_service << "\n";
-	
 	return true;
 } 
 
@@ -137,7 +136,7 @@ bool Socket::connect(const char* s_address, const char* s_port, const char* d_ad
 	freeaddrinfo(d_addrinfo);
 
 	if(sockfd == INVALID_SOCKET){
-		std::cout << "Connect failed\n";
+		std::println("socket connection failed");
 		return false;
 	}
 
