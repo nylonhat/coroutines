@@ -21,7 +21,11 @@ struct IOSystem {
 		
 		event_loop.addSocket(socket);
 		
-		socket.connect(NULL, "21212", "127.0.0.1", "27000");
+		bool success = co_await socket.connect(NULL, "21212", "127.0.0.1", "27000");
+		if(!success){
+			co_return 0;
+		}
+
 		std::println("Starting echo server");
 
 		std::string message = "You have connected to an Echo server\n";
@@ -30,6 +34,7 @@ struct IOSystem {
 		std::println("{:2} send", bytes_sent);
 	
 		//std::cout << co_await threadpool.chain(socket.send("test",5)) << "\n"; 		
+	
 		
 		while(true){
 			//Echo server
@@ -44,7 +49,7 @@ struct IOSystem {
 			std::println("{:2} send", bytes_sent);
 
 		}
-
+		
 		co_return 0;
 	}
 
