@@ -13,10 +13,11 @@ struct IOSystem {
 
 	IOSystem()
 		: event_loop()
-		, threadpool(0)
+		, threadpool(1)
 	{}
 
 	Sync<int> entry(){
+
 		linux::io::net::udp::Socket socket;
 		
 		event_loop.addSocket(socket);
@@ -33,7 +34,8 @@ struct IOSystem {
 		int bytes_sent = co_await socket.send(message.c_str(), message.size()+1);
 		std::println("{:2} send", bytes_sent);
 	
-		//std::cout << co_await threadpool.chain(socket.send("test",5)) << "\n"; 		
+		int chain_bytes_sent = co_await threadpool.chain(socket.send("test",5));		
+
 	
 		
 		while(true){

@@ -55,6 +55,7 @@ addrinfo* Socket::resolveAddressInfo(const char* address, const char* port, addr
 }
 
 Task<bool> Socket::createSocket(addrinfo* address){
+	//IORING_OP_SOCKET not supported correctly until linux kernel 6.3
 	sockfd = socket(address->ai_family, address->ai_socktype, address->ai_protocol);
 	
 	if(sockfd < 0){//== INVALID_SOCKET){
