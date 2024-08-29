@@ -3,8 +3,6 @@
 
 #include "scheduler.h"
 #include <array>
-#include <variant>
-#include <optional>
 
 template<typename B, size_t SIZE>
 struct Recycler {
