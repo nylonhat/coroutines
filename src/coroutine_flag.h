@@ -7,14 +7,10 @@
 #include <functional>
 #include "scheduler.h"
 
-template<typename T>
 struct CoroFlag {
-	mutable std::atomic<void*> awaiters_head = nullptr;
-	T& result_reference;
+	using m = std::memory_order;
 
-	CoroFlag(T& result) noexcept 
-		: result_reference{result}	{
-	}
+	mutable std::atomic<void*> awaiters_head = nullptr;
 
 	~CoroFlag(){
 		assert(awaiters_head.load() == nullptr 
@@ -29,9 +25,8 @@ struct CoroFlag {
 	template<Scheduler S>
 	void signal_and_notify(S& scheduler) noexcept{
 		//Signal set by exchanging the head of list with 'set' state
-		auto* current_awaiter = static_cast<Awaiter*>(
-			awaiters_head.exchange(static_cast<void*>(this), std::memory_order_acq_rel) 
-		);
+		auto old = awaiters_head.exchange(static_cast<void*>(this), m::acq_rel); 
+		auto* current_awaiter = static_cast<Awaiter*>(old);
 		
 		//Notify by walking through linked list
 		//Scheduling all awaiters in the list
@@ -66,7 +61,7 @@ struct CoroFlag {
 			waiting_handle = awaiting_coroutine;
 
 			// Try to atomically push this awaiter onto the front of the list.
-			void* current_head = flag.awaiters_head.load(std::memory_order_acquire);
+			void* current_head = flag.awaiters_head.load(m::acquire);
 
 			do {
 				// Resume immediately if already in set  state.
@@ -82,23 +77,16 @@ struct CoroFlag {
 			} while (!flag.awaiters_head.compare_exchange_weak(
 					current_head, 
 					static_cast<void*>(this), 
-					std::memory_order_release, 
-					std::memory_order_acquire
+					m::release, 
+					m::acquire
 			));
 
 			// Successfully enqueued. Remain suspended.
 			return true;
 		}
 
-		T await_resume() noexcept{
-			return flag.result_reference;
-		}
-
 	};
 
-	Awaiter operator co_await() const noexcept{
-  		return Awaiter{*this};
-	}
 
 };
 

@@ -21,12 +21,18 @@ struct [[nodiscard]] Branch {
 	struct promise_type {
 		T value{};
 		SchedulerHandle scheduler;
-		CoroFlag<T> flag;
+		CoroFlag flag;
+		std::coroutine_handle<> waiting_handle = std::noop_coroutine();
 
-		template<Scheduler S, typename A>
-		promise_type(S& scheduler, A& awaitable)
+		template<Scheduler S, typename... A>
+		promise_type(S& scheduler, A&...)
 			:scheduler{scheduler}
-			,flag(value)
+		{
+		}
+		
+		template<typename C, Scheduler S, typename... A>
+		promise_type(C& c, S& scheduler, A&...)
+			:scheduler{scheduler}
 		{
 		}
 
@@ -43,8 +49,9 @@ struct [[nodiscard]] Branch {
 
 			bool await_ready() noexcept {return false;}
 
-			void await_suspend (std::coroutine_handle<> handle) noexcept {
+			auto await_suspend (std::coroutine_handle<> handle) noexcept {
 				promise.flag.signal_and_notify(promise.scheduler);
+				return promise.waiting_handle;
 			}
 
 			void await_resume() noexcept {}	
@@ -66,6 +73,12 @@ struct [[nodiscard]] Branch {
 		}
 
 		void unhandled_exception() {}
+
+		//void* operator new(std::size_t size) noexcept{
+		//}
+
+		//void operator delete(void* ptr, std::size_t size) noexcept{
+		//}
 
 	};
 
@@ -98,14 +111,20 @@ struct [[nodiscard]] Branch {
 		}		
 	}
 
-	//No heap allocations - Heap Elision Optimisation 
-	void* operator new(std::size_t size);
-	void operator delete(void* ptr, std::size_t size);
-
 	std::coroutine_handle<promise_type> my_handle;
 
+	struct FlagAwaiter : CoroFlag::Awaiter{
+		T& value;
+
+		T& await_resume(){
+			return value;
+		}
+	}; 
+
 	auto operator co_await() const noexcept{
-  		return my_handle.promise().flag.operator co_await();
+  		//return my_handle.promise().flag.operator co_await();
+		auto& promise = my_handle.promise();
+		return FlagAwaiter{{promise.flag}, {promise.value}};
 	}
 
 	bool done() noexcept{
@@ -143,6 +162,12 @@ struct [[nodiscard]] BranchAwaiter {
 		,branch{create_branch_on(scheduler, std::forward<A>(awaitable))}
 	{}
 	
+	template<Scheduler S>
+	BranchAwaiter(S& scheduler, Branch<T>&& branch)
+		:scheduler{scheduler}
+		,branch{std::forward<Branch<T>>(branch)}
+	{}
+
 
 	//Awaiter
 	bool await_ready() noexcept{
@@ -152,15 +177,14 @@ struct [[nodiscard]] BranchAwaiter {
 	//noinline attribute as workaround for miscompilation bug in clang.
 	//https://github.com/llvm/llvm-project/issues/56301
 	//results in correct but slower code! (still faster than gcc)
-	__attribute__((noinline))
+	//__attribute__((noinline))
 	std::coroutine_handle<> await_suspend(std::coroutine_handle<> caller_handle) noexcept{
-		std::coroutine_handle<> branch_handle_copy = branch.my_handle;
-		if(scheduler.schedule(caller_handle) != caller_handle){
-			return branch_handle_copy;
-		}
+		auto branch_handle_copy = branch.my_handle;
+		auto waiting_handle = scheduler.schedule(caller_handle);
+		//branch variable now invalid;
+		branch_handle_copy.promise().waiting_handle = waiting_handle;;
+		return branch_handle_copy;
 
-		branch_handle_copy.resume();
-		return caller_handle;
 	}
 
 	Branch<T> await_resume() noexcept{
@@ -175,4 +199,8 @@ auto branch_on(S& scheduler, A&& awaitable){
 	return BranchAwaiter<ValueTypeOf<A>>(scheduler, std::forward<A>(awaitable));
 };
 
+template<Scheduler S, typename T>
+auto branch_on(S& scheduler, Branch<T>&& branch){
+	return BranchAwaiter<T>(scheduler, std::forward<Branch<T>>(branch));
+};
 #endif

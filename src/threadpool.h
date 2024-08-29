@@ -10,7 +10,6 @@
 
 #include "chain.h"
 #include "branch.h"
-#include "spawn.h"
 #include "queue.h"
 #include "deque.h"
 
@@ -46,11 +45,6 @@ public:
 	template<typename A>
 	auto branch(A&& awaitable){
 		return branch_on(*this, std::forward<A>(awaitable));
-	}
-
-	template<typename A>
-	auto spawn(A&& awaitable){
-		return spawn_on(*this, std::forward<A>(awaitable));
 	}
 
 

@@ -1,6 +1,6 @@
 #include "dag_system.h"
 //#include "win32_io_system.h"
-#include "linux_io_system.h"
+//#include "linux_io_system.h"
 #include "monadic.h"
 
 int main() {
@@ -16,11 +16,11 @@ int main() {
 */
 
 	
-	IOSystem io_system{};
-	io_system.entry().await();
+	//IOSystem io_system{};
+	//io_system.entry().await();
 
-	//DagSystem dag_system;
-	//dag_system.entry().await();
+	DagSystem dag_system;
+	dag_system.entry().await();
 
 
 	return 0;

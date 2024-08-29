@@ -3,6 +3,7 @@
 
 #include <coroutine>
 #include <variant>
+#include <print>
 
 /**
  * A task is the most basic type of coroutine. It acts like
@@ -55,12 +56,12 @@ struct Task {
 		};
 
 			
-		ResultAwaiter yield_value(T yield_value) noexcept{
+		ResultAwaiter yield_value(T yield_value){
 			value = yield_value;
 			return ResultAwaiter{*this};	
 		}
 
-		void return_value(T return_value) noexcept{
+		void return_value(T return_value){
 			value = return_value;
 		}
 		
@@ -70,10 +71,13 @@ struct Task {
 
 		void unhandled_exception() {}
 
+		//void* operator new(std::size_t size);
+		//void operator delete(void* ptr, std::size_t size);
+
 	};
 
 	//Constructor
-	Task(std::coroutine_handle<promise_type> handle) noexcept 
+	Task(std::coroutine_handle<promise_type> handle) 
 		:my_handle(handle)
 	{}
 
@@ -81,7 +85,7 @@ struct Task {
 	Task(Task& t) = delete;
 
 	//Move Constructor
-	Task(Task&& rhs) noexcept 
+	Task(Task&& rhs) 
 		: my_handle(rhs.my_handle)
 	{ 
 		rhs.my_handle = nullptr; 
@@ -105,21 +109,21 @@ struct Task {
 
 	std::coroutine_handle<promise_type> my_handle;
 
-	bool done() noexcept{
+	bool done(){
 		return my_handle.done();
 	}
 	
 	//Awaiter
-	bool await_ready() noexcept{
+	constexpr bool await_ready() const noexcept{
 		return my_handle.done();
 	}
 
-	std::coroutine_handle<> await_suspend(std::coroutine_handle<> caller_handle) noexcept{
+	std::coroutine_handle<> await_suspend(std::coroutine_handle<> caller_handle){
 		my_handle.promise().waiting_handle = caller_handle;
 		return my_handle;
 	}
 
-	T await_resume() noexcept{
+	constexpr T await_resume() const noexcept{
 		return my_handle.promise().value;
 	}
 
