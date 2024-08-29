@@ -11,13 +11,14 @@
 #include "timer.h"
 #include "recycler.h"
 #include "fork.h"
+#include "flow.h"
 
 DagSystem::DagSystem()
-	: threadpool(4)
+	: threadpool(16)
 {}
 
 Sync<int> DagSystem::entry(){
-	size_t iterations = 10000000;
+	size_t iterations = 1;
 
 	auto result = co_await benchmark(iterations);
 
@@ -40,23 +41,11 @@ Task<size_t> DagSystem::benchmark(int iterations){
 		//result += co_await threadpool.chain(multiply(i,1));
 		//result += co_await co_await threadpool.branch(multiply(i,1));
 		//result += co_await threadpool.spawn(multiply(i,1));
-		//result += co_await recyclerTest(1'000'000);
+		result += co_await recyclerTest(1'000'000);
 		//result = co_await vectorTest(1'000'000);
 		//result += sync_run(multiply(i,1));
 		//result += [](int a, int b){return a*b;}(i, 1);
 		//result += co_await co_await branch_on(threadpool, multiply(i, 1));
-		
-		auto count = Forkcount{};
-		auto forka = co_await fork_on(threadpool, count, multiply(i, 1));
-		auto forkb = co_await fork_on(threadpool, count, multiply(i, 1));
-		auto forkc = co_await fork_on(threadpool, count, multiply(i, 1));
-		auto forkd = co_await fork_on(threadpool, count, multiply(i, 1));
-		co_await count.join();
-
-		result += co_await forka;
-		result += co_await forkb;
-		result += co_await forkc;
-		result += co_await forkd;
 
 	}
 
@@ -121,23 +110,30 @@ Task<int> DagSystem::vectorTest(size_t size){
 }
 
 
-Task<int> DagSystem::recyclerTest(size_t limit){
-	using Branch = std::optional<Branch<int>>;
+Task<int> DagSystem::recyclerTest(size_t iterations){
+	using Flow = std::optional<Flow<int>>;
 	
 	int result = 0;
 	size_t count = 0;
 
-	std::array<Branch, 4> branches{};
-	Recycler recycler{branches};
+	std::array<Flow, 4> flows{};
+	Recycler recycler{flows};
+
+	auto semaphore = Semaphore{4};
 	
-	while(count < limit){
-		auto maybe_branch = recycler.emplace(co_await threadpool.branch(multiply(1,1)));
-		if(maybe_branch){result += co_await *maybe_branch;}
+	while(count < iterations){
+		co_await semaphore.acquire();
+
+		auto flow = co_await flow_on(threadpool, semaphore, permutation());
+		auto maybe_flow = recycler.emplace(std::move(flow));
+		if(maybe_flow){result += co_await *maybe_flow;}
 		count++;
 	}
 
-	for(auto& maybe_branch : branches){
-		if(maybe_branch){result += co_await *maybe_branch;}
+	co_await semaphore.join();
+
+	for(auto& maybe_flow : flows){
+		if(maybe_flow){result += co_await *maybe_flow;}
 	}
 
 	co_return result;
