@@ -3,8 +3,7 @@
 #include <concepts>
 #include <vector>
 #include <array>
-#include <variant>
-#include <iostream>
+#include <print>
 
 #include "branch.h"
 #include "dag_system.h"
@@ -19,11 +18,8 @@ DagSystem::DagSystem()
 
 Sync<int> DagSystem::entry(){
 	size_t iterations = 1;
-
 	auto result = co_await benchmark(iterations);
-
-	std::cout << "Result: " << result << "\n";
-	
+	std::println("Result: {}", result);
 	co_return 0;
 }
 
@@ -50,7 +46,7 @@ Task<size_t> DagSystem::benchmark(int iterations){
 	}
 
 	timer.stop();
-	std::cout << timer.count()/iterations << " ns\n";
+	std::println("{} ns", timer.count()/iterations);
 	
 	co_return result;
 }
@@ -111,29 +107,24 @@ Task<int> DagSystem::vectorTest(size_t size){
 
 
 Task<int> DagSystem::recyclerTest(size_t iterations){
-	using Flow = std::optional<Flow<int>>;
 	
 	int result = 0;
-	size_t count = 0;
-
-	std::array<Flow, 4> flows{};
+	std::array<Flow<int>, 4> flows{};
 	Recycler recycler{flows};
-
 	auto semaphore = Semaphore{4};
 	
-	while(count < iterations){
+	for(size_t count = 0; count < iterations; ++count){
 		co_await semaphore.acquire();
 
 		auto flow = co_await flow_on(threadpool, semaphore, permutation());
-		auto maybe_flow = recycler.emplace(std::move(flow));
-		if(maybe_flow){result += co_await *maybe_flow;}
-		count++;
+		auto old_flow = recycler.recycle(std::move(flow));
+		result += old_flow ? co_await old_flow : 0;
 	}
 
 	co_await semaphore.join();
 
-	for(auto& maybe_flow : flows){
-		if(maybe_flow){result += co_await *maybe_flow;}
+	for(auto& flow : flows){
+		result += flow ? co_await flow : 0;
 	}
 
 	co_return result;

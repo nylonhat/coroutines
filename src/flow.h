@@ -37,6 +37,7 @@ struct [[nodiscard]] Flow {
 			auto await_suspend (std::coroutine_handle<> handle) noexcept {
 				///??? TODO
 				promise.done.store(true);
+
 				promise.semaphore.release_and_notify(promise.scheduler).resume();
 				return promise.waiting_handle;
 			}
@@ -70,6 +71,8 @@ struct [[nodiscard]] Flow {
 	};
 
 	//Constructor
+	Flow(){}
+
 	Flow(std::coroutine_handle<promise_type> handle) noexcept 
 		:my_handle(handle)
 	{} 
@@ -88,7 +91,11 @@ struct [[nodiscard]] Flow {
 	Flow& operator=(const Flow& t) = delete;
 	
 	//Move assignment
-	Flow& operator=(Flow&& rhs) = delete;
+	Flow& operator=(Flow&& rhs){
+		my_handle = rhs.my_handle;
+		rhs.my_handle = nullptr;
+		return *this;
+	}
 
 	//Destructor
 	~Flow(){
@@ -97,9 +104,14 @@ struct [[nodiscard]] Flow {
 		}		
 	}
 
-	std::coroutine_handle<promise_type> my_handle;
+	std::coroutine_handle<promise_type> my_handle = nullptr;
+
+	explicit operator bool() const { return my_handle != nullptr; }
 
 	bool done(){
+		if(my_handle == nullptr){
+			return true;
+		}
 		return my_handle.promise().done.load();
 	}
 
@@ -177,3 +189,4 @@ auto flow_on(S& scheduler, Semaphore& semaphore, A&& awaitable){
 };
 
 #endif
+

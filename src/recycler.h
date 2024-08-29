@@ -8,30 +8,21 @@
 
 template<typename B, size_t SIZE>
 struct Recycler {
-	std::array<std::optional<B>, SIZE>& array;
+	std::array<B, SIZE>& array;
 	size_t index = 0;
 
-	Recycler(std::array<std::optional<B>, SIZE>& array)
+	Recycler(std::array<B, SIZE>& array)
 		:array{array}
 	{}
 
-	std::optional<B> emplace(B&& branch){
+	B recycle(B&& branch){
 		for(;;){
 			auto& slot = array.at(index%SIZE); 
 			index++;
-			if(!slot){
-				slot.template emplace<B>(std::move(branch));
-				return {};
+			if(!slot.done()){
+				continue; 
 			}
-
-			auto& running_branch = *slot;
-
-			if(running_branch.done()){
-				B done_branch = std::move(running_branch);
-				slot.template emplace<B>(std::move(branch));
-				return std::move(done_branch);
-			}
-
+			return std::exchange(slot, std::move(branch));
 		}
 	}	
 
