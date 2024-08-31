@@ -3,7 +3,7 @@ ifdef OS
 	CLANG += -femulated-tls
 endif
 
-GCC := g++ -fcoroutines
+GCC := g++ #-fcoroutines
 
 CXX := $(CLANG) -std=c++23
 
@@ -16,7 +16,7 @@ else
 	#RELEASE += -flto=auto
 endif
 
-CXXFLAGS := $(RELEASE)
+CXXFLAGS := $(DEBUG)
 
 SRCPATH := ./src
 BINPATH := ./bin

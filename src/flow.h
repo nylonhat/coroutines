@@ -99,10 +99,12 @@ struct Flow<T>::promise_type {
 
 		auto await_suspend (std::coroutine_handle<> handle) noexcept {
 			///??? TODO
+			auto maybe_waiting = promise.waiting_handle; 
+
 			promise.done.store(true);
 
 			promise.semaphore.release_and_notify(promise.scheduler).resume();
-			return promise.waiting_handle;
+			return maybe_waiting;
 		}
 
 		void await_resume() noexcept {}	

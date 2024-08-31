@@ -35,7 +35,7 @@ struct [[nodiscard]] Fork {
 
 			auto await_suspend (std::coroutine_handle<> handle) noexcept {
 				auto maybe_waiting = promise.waiting_handle;
-				promise.forkcount.release_and_notify(promise.scheduler);
+				promise.forkcount.release_and_notify(promise.scheduler).resume();
 				return maybe_waiting;
 			}
 

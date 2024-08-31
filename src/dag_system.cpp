@@ -23,7 +23,7 @@ Sync<int> DagSystem::entry(){
 	co_return 0;
 }
 
-Task<size_t> DagSystem::benchmark(int iterations){
+Task<size_t> DagSystem::benchmark(size_t iterations){
 	
 	size_t result = 0;
 	
@@ -37,8 +37,9 @@ Task<size_t> DagSystem::benchmark(int iterations){
 		//result += co_await threadpool.chain(multiply(i,1));
 		//result += co_await co_await threadpool.branch(multiply(i,1));
 		//result += co_await threadpool.spawn(multiply(i,1));
-		result += co_await recyclerTest(1'000'000);
+		//result += co_await recyclerTest(1'000'000);
 		//result = co_await vectorTest(1'000'000);
+		result = co_await forkTest(1'000'000);
 		//result += sync_run(multiply(i,1));
 		//result += [](int a, int b){return a*b;}(i, 1);
 		//result += co_await co_await branch_on(threadpool, multiply(i, 1));
@@ -105,7 +106,28 @@ Task<int> DagSystem::vectorTest(size_t size){
 	co_return result;
 }
 
+Task<int> DagSystem::forkTest(size_t size){
+	size_t result = 0;
 
+	std::vector<Fork<int>> branches{};
+	branches.reserve(size);
+
+	Forkcount count = {};
+
+	for(size_t i = 0; i<size; i++){
+		branches.emplace_back(co_await fork_on(threadpool, count, multiply(1, 1)));
+	}
+
+	co_await count.join();
+
+	for(auto& branch: branches){
+		result += co_await branch;
+	}
+
+	co_return result;
+}
+
+/*
 Task<int> DagSystem::recyclerTest(size_t iterations){
 	
 	int result = 0;
@@ -131,4 +153,4 @@ Task<int> DagSystem::recyclerTest(size_t iterations){
 
 }
 
-
+*/

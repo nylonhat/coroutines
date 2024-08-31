@@ -19,11 +19,12 @@ struct DagSystem {
 
 	Task<int> multiply(int a, int b);
 	Task<int> permutation();
-	Task<size_t> benchmark(int iterations);
+	Task<size_t> benchmark(size_t iterations);
 	Task<size_t> fib(int n);
 	Task<int> vectorTest(size_t elements);
-	Task<int> recyclerTest(size_t limit);
+	//Task<int> recyclerTest(size_t limit);
 
+	Task<int> forkTest(size_t size);
 	size_t fib_f(int n);
 };
 
