@@ -34,8 +34,9 @@ struct [[nodiscard]] Fork {
 			bool await_ready() noexcept {return false;}
 
 			auto await_suspend (std::coroutine_handle<> handle) noexcept {
+				auto maybe_waiting = promise.waiting_handle;
 				promise.forkcount.release_and_notify(promise.scheduler);
-				return promise.waiting_handle;
+				return maybe_waiting;
 			}
 
 			void await_resume() noexcept {}	

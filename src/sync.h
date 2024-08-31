@@ -1,10 +1,8 @@
 #ifndef SYNC_H
 #define SYNC_H
 
-#include <variant>
-#include <atomic>
 #include <coroutine>
-#include <thread>
+#include <semaphore>
 
 /**
  * A blocking task is a coroutine whose only purpose is
@@ -23,7 +21,11 @@ struct Sync {
 
 	struct promise_type {
 		T value;
-		std::atomic_flag flag = ATOMIC_FLAG_INIT;
+		std::binary_semaphore flag;
+		
+		promise_type()
+			:flag(0)
+		{}
 
 		Sync get_return_object() { 
 			return {std::coroutine_handle<promise_type>::from_promise(*this)}; 
@@ -37,8 +39,7 @@ struct Sync {
 			bool await_ready() noexcept {return false;}
 
 			std::coroutine_handle<> await_suspend (std::coroutine_handle<> handle) noexcept {
-				promise.flag.test_and_set();
-				promise.flag.notify_all();
+				promise.flag.release();
 				return std::noop_coroutine();
 			}
 
@@ -99,10 +100,9 @@ struct Sync {
 		if (my_handle.done()){
 			return my_handle.promise().value;		
 		}
-
+		
 		my_handle.resume();
-		my_handle.promise().flag.wait(false);
-		my_handle.promise().flag.clear();
+		my_handle.promise().flag.acquire();
 		
 		return my_handle.promise().value;
 	}
