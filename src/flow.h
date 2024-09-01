@@ -98,9 +98,10 @@ struct Flow<T>::promise_type {
 		bool await_ready() noexcept {return false;}
 
 		auto await_suspend (std::coroutine_handle<> handle) noexcept {
-			///??? TODO
+			///??? TODO race condition somewhere
 			auto maybe_waiting = promise.waiting_handle; 
-
+			
+			//race condition because recycer array may take 
 			promise.done.store(true);
 
 			promise.semaphore.release_and_notify(promise.scheduler).resume();

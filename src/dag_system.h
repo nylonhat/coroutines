@@ -22,7 +22,7 @@ struct DagSystem {
 	Task<size_t> benchmark(size_t iterations);
 	Task<size_t> fib(int n);
 	Task<int> vectorTest(size_t elements);
-	//Task<int> recyclerTest(size_t limit);
+	Task<int> recyclerTest(size_t limit);
 
 	Task<int> forkTest(size_t size);
 	size_t fib_f(int n);
