@@ -37,7 +37,7 @@ Task<size_t> DagSystem::benchmark(size_t iterations){
 		//result += co_await threadpool.chain(multiply(i,1));
 		//result += co_await co_await threadpool.branch(multiply(i,1));
 		//result += co_await threadpool.spawn(multiply(i,1));
-		result += co_await recyclerTest(1'000);
+		result += co_await recyclerTest(1000);
 		//result = co_await vectorTest(1'000'000);
 		//result = co_await forkTest(1'000'000);
 		//result += sync_run(multiply(i,1));
@@ -131,9 +131,9 @@ Task<int> DagSystem::forkTest(size_t size){
 Task<int> DagSystem::recyclerTest(size_t iterations){
 	
 	int result = 0;
-	std::array<Flow<int>, 1> flows{};
+	std::array<Flow<int>, 16> flows{};
 	Recycler recycler{flows};
-	auto semaphore = Semaphore{1};
+	auto semaphore = Semaphore{16};
 	
 	for(size_t count = 0; count < iterations; ++count){
 		co_await semaphore.acquire();

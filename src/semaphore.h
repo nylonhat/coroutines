@@ -10,15 +10,15 @@ struct Semaphore{
 	std::coroutine_handle<> waiting_handle = std::noop_coroutine();
 	const int max = 0;
 
-	Semaphore(int max)
-		: count{max}
-		, max{max}
+	Semaphore(int start)
+		: count{start}
+		, max{start}
 	{}
 
-	std::coroutine_handle<> release_and_notify(Scheduler auto scheduler){
-		const auto temp_max = max;
+	std::coroutine_handle<> release_and_notify(SchedulerHandle scheduler){
+		auto max_copy = max;
 		auto old_count = count.fetch_add(1);
-		if(old_count == -1 || old_count == temp_max){
+		if(old_count == -1 || old_count == max_copy){
 			return scheduler.schedule(waiting_handle);
 		}
 		return std::noop_coroutine();
@@ -70,10 +70,10 @@ struct Semaphore{
 	}
 
 	bool join_and_should_suspend(std::coroutine_handle<> may_wait_handle){
+		auto max_copy = max;
 		waiting_handle = may_wait_handle;
-		const auto temp_max = max;
 		auto old_count = count.fetch_add(1);
-		if(old_count == temp_max){
+		if(old_count == max_copy){
 			return false;	
 		}
 
@@ -85,7 +85,7 @@ struct Semaphore{
 		Semaphore& semaphore;
 
 		bool await_ready(){
-			return semaphore.all_done(); 
+			return semaphore.all_done();
 		}
 
 		bool await_suspend(std::coroutine_handle<> handle){

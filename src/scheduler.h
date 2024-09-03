@@ -27,6 +27,12 @@ struct SchedulerHandle {
 		, schedule_ptr{type_erased_schedule<S>} 
 	{}
 
+	SchedulerHandle(SchedulerHandle& rhs){
+		type_ptr = rhs.type_ptr;
+		schedule_ptr = rhs.schedule_ptr;
+	}
+
+
 	std::coroutine_handle<> schedule(std::coroutine_handle<> coro){
 		return schedule_ptr(type_ptr, coro);
 	}
