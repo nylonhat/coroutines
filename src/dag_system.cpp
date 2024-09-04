@@ -140,13 +140,17 @@ Task<int> DagSystem::recyclerTest(size_t iterations){
 
 		auto flow = co_await flow_on(threadpool, semaphore, permutation());
 		auto old_flow = recycler.recycle(std::move(flow));
-		result += old_flow ? co_await old_flow : 0;
+		if(old_flow){
+			result += co_await old_flow;
+		}
 	}
 
 	co_await semaphore.join();
 
 	for(auto& flow : flows){
-		result += flow ? co_await flow : 0;
+		if(flow){
+			result += co_await flow;
+		}
 	}
 
 	co_return result;
